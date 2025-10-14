@@ -18,6 +18,7 @@ const FILE_NAME = 'Conceptual Design Set_20251008.pdf';
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 // ESM-compatible fetch wrapper
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
