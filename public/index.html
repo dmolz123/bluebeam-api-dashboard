@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bluebeam Markup Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #f5f5f5;
+    }
+    #refresh {
+      padding: 10px 20px;
+      background-color: #1A5AFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+    canvas {
+      margin-top: 40px;
+      max-height: 300px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📝 Bluebeam Markups (Live)</h2>
+  <button id="refresh">🔄 Refresh Data</button>
+
+  <table id="markupTable">
+    <thead>
+      <tr>
+        <th>Author</th>
+        <th>Subject</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Page</th>
+        <th>Date Created</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <canvas id="subjectChart"></canvas>
+
+  <script>
+    const API_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/markups';
+
+    const refreshBtn = document.getElementById('refresh');
+    const tableBody = document.querySelector('#markupTable tbody');
+    const ctx = document.getElementById('subjectChart').getContext('2d');
+
+    let chartInstance;
+
+    async function fetchAndRender() {
+      refreshBtn.disabled = true;
+      refreshBtn.innerText = 'Loading...';
+
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+
+        // --- Table ---
+        tableBody.innerHTML = '';
+        data.forEach(m => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${m.Author || '-'}</td>
+            <td>${m.Subject || '-'}</td>
+            <td>${m.Type || '-'}</td>
+            <td>${m.Status || '-'}</td>
+            <td>${m.Page || '-'}</td>
+            <td>${new Date(m.DateCreated).toLocaleString()}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+
+        // --- Chart ---
+        const counts = {};
+        data.forEach(m => {
+          const subject = m.Subject || 'Unknown';
+          counts[subject] = (counts[subject] || 0) + 1;
+        });
+
+        const labels = Object.keys(counts);
+        const values = Object.values(counts);
+
+        if (chartInstance) chartInstance.destroy();
+
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: '# of Markups by Subject',
+              data: values,
+              backgroundColor: '#1A5AFF'
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              title: {
+                display: true,
+                text: 'Markups by Subject'
+              }
+            }
+          }
+        });
+
+      } catch (err) {
+        alert('Failed to load data.');
+        console.error(err);
+      }
+
+      refreshBtn.disabled = false;
+      refreshBtn.innerText = '🔄 Refresh Data';
+    }
+
+    refreshBtn.addEventListener('click', fetchAndRender);
+    fetchAndRender(); // auto-load on page open
+  </script>
+</body>
+</html>
