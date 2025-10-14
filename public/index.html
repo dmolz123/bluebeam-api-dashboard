@@ -1,28 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Bluebeam Markup Dashboard</title>
+
+  <!-- DataTables + Chart.js CDN -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      text-align: left;
-      font-size: 14px;
-    }
-    th {
-      background: #f5f5f5;
-    }
+
     #refresh {
       padding: 10px 20px;
       background-color: #1A5AFF;
@@ -32,6 +25,24 @@
       margin-bottom: 20px;
       cursor: pointer;
     }
+
+    table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f5f5f5;
+    }
+
     canvas {
       margin-top: 40px;
       max-height: 300px;
@@ -49,7 +60,6 @@
         <th>Author</th>
         <th>Subject</th>
         <th>Type</th>
-        <th>Status</th>
         <th>Page</th>
         <th>Date Created</th>
       </tr>
@@ -61,11 +71,11 @@
 
   <script>
     const API_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/markups';
-
     const refreshBtn = document.getElementById('refresh');
     const tableBody = document.querySelector('#markupTable tbody');
     const ctx = document.getElementById('subjectChart').getContext('2d');
 
+    let dataTable;
     let chartInstance;
 
     async function fetchAndRender() {
@@ -76,30 +86,38 @@
         const res = await fetch(API_URL);
         const data = await res.json();
 
-        // --- Table ---
-        tableBody.innerHTML = '';
-        data.forEach(m => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${m.Author || '-'}</td>
-            <td>${m.Subject || '-'}</td>
-            <td>${m.Type || '-'}</td>
-            <td>${m.Status || '-'}</td>
-            <td>${m.Page || '-'}</td>
-            <td>${new Date(m.DateCreated).toLocaleString()}</td>
-          `;
-          tableBody.appendChild(row);
-        });
+        if (!Array.isArray(data)) {
+          throw new Error(data.error || 'Unexpected response from API');
+        }
 
-        // --- Chart ---
-        const counts = {};
+        // Reset table and repopulate
+        if (dataTable) {
+          dataTable.clear().draw();
+        } else {
+          dataTable = new DataTable('#markupTable');
+        }
+
+        const subjectCounts = {};
+
         data.forEach(m => {
+          const row = [
+            m.Author || '-',
+            m.Subject || '-',
+            m.Type || '-',
+            m.Page || '-',
+            m.DateCreated ? new Date(m.DateCreated).toLocaleString() : '-'
+          ];
+          dataTable.row.add(row);
+
           const subject = m.Subject || 'Unknown';
-          counts[subject] = (counts[subject] || 0) + 1;
+          subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
         });
 
-        const labels = Object.keys(counts);
-        const values = Object.values(counts);
+        dataTable.draw();
+
+        // Bar Chart
+        const labels = Object.keys(subjectCounts);
+        const values = Object.values(subjectCounts);
 
         if (chartInstance) chartInstance.destroy();
 
@@ -126,7 +144,7 @@
         });
 
       } catch (err) {
-        alert('Failed to load data.');
+        alert('Failed to load data: ' + err.message);
         console.error(err);
       }
 
@@ -135,7 +153,8 @@
     }
 
     refreshBtn.addEventListener('click', fetchAndRender);
-    fetchAndRender(); // auto-load on page open
+    window.addEventListener('DOMContentLoaded', fetchAndRender);
   </script>
+
 </body>
 </html>
