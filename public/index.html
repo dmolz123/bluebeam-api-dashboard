@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Bluebeam Markup Dashboard</title>
 
-  <!-- DataTables + Chart.js CDN -->
+  <!-- ✅ DataTables + Chart.js CDN -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
@@ -14,6 +14,10 @@
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
     }
 
     #refresh {
@@ -68,15 +72,20 @@
   </table>
 
   <canvas id="subjectChart"></canvas>
+  <canvas id="statusChart"></canvas>
 
   <script>
     const API_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/markups';
+    const STATUS_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/statuses';
+
     const refreshBtn = document.getElementById('refresh');
     const tableBody = document.querySelector('#markupTable tbody');
-    const ctx = document.getElementById('subjectChart').getContext('2d');
+    const subjectCtx = document.getElementById('subjectChart').getContext('2d');
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
 
     let dataTable;
-    let chartInstance;
+    let subjectChart;
+    let statusChart;
 
     async function fetchAndRender() {
       refreshBtn.disabled = true;
@@ -90,7 +99,7 @@
           throw new Error(data.error || 'Unexpected response from API');
         }
 
-        // Reset table and repopulate
+        // Reset table
         if (dataTable) {
           dataTable.clear().draw();
         } else {
@@ -115,19 +124,19 @@
 
         dataTable.draw();
 
-        // Bar Chart
-        const labels = Object.keys(subjectCounts);
-        const values = Object.values(subjectCounts);
+        // 📊 Bar Chart: Subject
+        const subjectLabels = Object.keys(subjectCounts);
+        const subjectValues = Object.values(subjectCounts);
 
-        if (chartInstance) chartInstance.destroy();
+        if (subjectChart) subjectChart.destroy();
 
-        chartInstance = new Chart(ctx, {
+        subjectChart = new Chart(subjectCtx, {
           type: 'bar',
           data: {
-            labels,
+            labels: subjectLabels,
             datasets: [{
               label: '# of Markups by Subject',
-              data: values,
+              data: subjectValues,
               backgroundColor: '#1A5AFF'
             }]
           },
@@ -143,6 +152,9 @@
           }
         });
 
+        // 🥧 Pie Chart: Statuses
+        await fetchAndRenderStatusChart();
+
       } catch (err) {
         alert('Failed to load data: ' + err.message);
         console.error(err);
@@ -150,6 +162,45 @@
 
       refreshBtn.disabled = false;
       refreshBtn.innerText = '🔄 Refresh Data';
+    }
+
+    async function fetchAndRenderStatusChart() {
+      try {
+        const res = await fetch(STATUS_URL);
+        const counts = await res.json();
+
+        const labels = Object.keys(counts);
+        const values = Object.values(counts);
+
+        const colors = ['#1A5AFF', '#47D764', '#FFC107', '#FF6B6B', '#A28BD4', '#888'];
+
+        if (statusChart) statusChart.destroy();
+
+        statusChart = new Chart(statusCtx, {
+          type: 'pie',
+          data: {
+            labels,
+            datasets: [{
+              data: values,
+              backgroundColor: colors.slice(0, labels.length)
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: 'Markups by Status'
+              },
+              legend: {
+                position: 'bottom'
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Status chart error:', err);
+      }
     }
 
     refreshBtn.addEventListener('click', fetchAndRender);
