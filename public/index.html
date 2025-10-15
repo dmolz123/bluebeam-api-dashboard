@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Bluebeam Markup Dashboard</title>
 
-  <!-- ✅ DataTables + Chart.js CDN -->
+  <!-- DataTables + Chart.js CDN -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
@@ -14,10 +14,6 @@
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
-    }
-
-    h2 {
-      margin-bottom: 10px;
     }
 
     #refresh {
@@ -51,6 +47,12 @@
       margin-top: 40px;
       max-height: 300px;
     }
+
+    .chart-wrapper {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
@@ -64,6 +66,7 @@
         <th>Author</th>
         <th>Subject</th>
         <th>Type</th>
+        <th>Status</th>
         <th>Page</th>
         <th>Date Created</th>
       </tr>
@@ -71,13 +74,13 @@
     <tbody></tbody>
   </table>
 
-  <canvas id="subjectChart"></canvas>
-  <canvas id="statusChart"></canvas>
+  <div class="chart-wrapper">
+    <canvas id="subjectChart"></canvas>
+    <canvas id="statusChart"></canvas>
+  </div>
 
   <script>
     const API_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/markups';
-    const STATUS_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/statuses';
-
     const refreshBtn = document.getElementById('refresh');
     const tableBody = document.querySelector('#markupTable tbody');
     const subjectCtx = document.getElementById('subjectChart').getContext('2d');
@@ -99,7 +102,7 @@
           throw new Error(data.error || 'Unexpected response from API');
         }
 
-        // Reset table
+        // Reset table and repopulate
         if (dataTable) {
           dataTable.clear().draw();
         } else {
@@ -107,12 +110,14 @@
         }
 
         const subjectCounts = {};
+        const statusCounts = {};
 
         data.forEach(m => {
           const row = [
             m.Author || '-',
             m.Subject || '-',
             m.Type || '-',
+            m.Status || '-',
             m.Page || '-',
             m.DateCreated ? new Date(m.DateCreated).toLocaleString() : '-'
           ];
@@ -120,23 +125,22 @@
 
           const subject = m.Subject || 'Unknown';
           subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
+
+          const status = m.Status || 'Unknown';
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
         });
 
         dataTable.draw();
 
-        // 📊 Bar Chart: Subject
-        const subjectLabels = Object.keys(subjectCounts);
-        const subjectValues = Object.values(subjectCounts);
-
+        // --- Subject Chart ---
         if (subjectChart) subjectChart.destroy();
-
         subjectChart = new Chart(subjectCtx, {
           type: 'bar',
           data: {
-            labels: subjectLabels,
+            labels: Object.keys(subjectCounts),
             datasets: [{
               label: '# of Markups by Subject',
-              data: subjectValues,
+              data: Object.values(subjectCounts),
               backgroundColor: '#1A5AFF'
             }]
           },
@@ -152,8 +156,30 @@
           }
         });
 
-        // 🥧 Pie Chart: Statuses
-        await fetchAndRenderStatusChart();
+        // --- Status Chart ---
+        if (statusChart) statusChart.destroy();
+        statusChart = new Chart(statusCtx, {
+          type: 'pie',
+          data: {
+            labels: Object.keys(statusCounts),
+            datasets: [{
+              label: '# by Status',
+              data: Object.values(statusCounts),
+              backgroundColor: [
+                '#1A5AFF', '#4CAF50', '#FFC107', '#FF5722', '#9C27B0', '#FF9800', '#607D8B'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: 'Markups by Status'
+              }
+            }
+          }
+        });
 
       } catch (err) {
         alert('Failed to load data: ' + err.message);
@@ -164,48 +190,10 @@
       refreshBtn.innerText = '🔄 Refresh Data';
     }
 
-    async function fetchAndRenderStatusChart() {
-      try {
-        const res = await fetch(STATUS_URL);
-        const counts = await res.json();
-
-        const labels = Object.keys(counts);
-        const values = Object.values(counts);
-
-        const colors = ['#1A5AFF', '#47D764', '#FFC107', '#FF6B6B', '#A28BD4', '#888'];
-
-        if (statusChart) statusChart.destroy();
-
-        statusChart = new Chart(statusCtx, {
-          type: 'pie',
-          data: {
-            labels,
-            datasets: [{
-              data: values,
-              backgroundColor: colors.slice(0, labels.length)
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              title: {
-                display: true,
-                text: 'Markups by Status'
-              },
-              legend: {
-                position: 'bottom'
-              }
-            }
-          }
-        });
-      } catch (err) {
-        console.error('Status chart error:', err);
-      }
-    }
-
     refreshBtn.addEventListener('click', fetchAndRender);
     window.addEventListener('DOMContentLoaded', fetchAndRender);
   </script>
 
 </body>
 </html>
+
