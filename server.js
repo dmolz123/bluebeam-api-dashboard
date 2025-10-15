@@ -1,10 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const qs = require('querystring');
+const qs = require('querystring'); // for x-www-form-urlencoded body
 const app = express();
 const PORT = 3000;
 
+// -----------------------------------------------------------------------------
+// 🔧 Environment variables and constants
+// -----------------------------------------------------------------------------
 const API_BASE = 'https://api.bluebeam.com/publicapi/v2';
 const CLIENT_ID = process.env.BB_CLIENT_ID;
 const CLIENT_SECRET = process.env.BB_CLIENT_SECRET;
@@ -17,19 +20,26 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// ESM-compatible fetch wrapper
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-// 🔁 Refresh Access Token
+// -----------------------------------------------------------------------------
+// 🔁 Refresh Bluebeam Access Token
+// -----------------------------------------------------------------------------
 async function refreshAccessToken() {
-  const response = await fetch('https://api.bluebeam.com/oauth2/token', {
+  const tokenUrl = 'https://api.bluebeam.com/oauth2/token';
+
+  const payload = {
+    grant_type: 'refresh_token',
+    refresh_token: REFRESH_TOKEN,
+    client_id: CLIENT_ID,
+    client_secret: CLIENT_SECRET
+  };
+
+  const response = await fetch(tokenUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: qs.stringify({
-      grant_type: 'refresh_token',
-      refresh_token: REFRESH_TOKEN,
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET
-    })
+    body: qs.stringify(payload)
   });
 
   if (!response.ok) {
@@ -42,23 +52,38 @@ async function refreshAccessToken() {
   return data.access_token;
 }
 
+// -----------------------------------------------------------------------------
 // 🔍 Health check
+// -----------------------------------------------------------------------------
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', sessionId: SESSION_ID, fileId: FILE_ID });
+  res.json({
+    status: 'healthy',
+    sessionId: SESSION_ID,
+    fileId: FILE_ID
+  });
 });
 
-// 📊 Flattened Markups
+// -----------------------------------------------------------------------------
+// 📊 Power BI endpoint - returns flattened markups for a single file
+// -----------------------------------------------------------------------------
 app.get('/powerbi/markups', async (req, res) => {
   try {
+    console.log(`📊 Fetching markups for session ${SESSION_ID}, file ${FILE_ID}...`);
+
+    // Refresh token automatically
     const accessToken = await refreshAccessToken();
 
-    const response = await fetch(`${API_BASE}/sessions/${SESSION_ID}/files/${FILE_ID}/markups`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        client_id: CLIENT_ID,
-        Accept: 'application/json'
+    // Fetch markups
+    const response = await fetch(
+      `${API_BASE}/sessions/${SESSION_ID}/files/${FILE_ID}/markups`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          client_id: CLIENT_ID,
+          Accept: 'application/json'
+        }
       }
-    });
+    );
 
     if (!response.ok) {
       const errText = await response.text();
@@ -66,8 +91,9 @@ app.get('/powerbi/markups', async (req, res) => {
     }
 
     const data = await response.json();
-    const markups = data.Markups || [];
+    const markups = data.Markups || data || [];
 
+    // Flatten markups
     const flattened = markups.map(m => ({
       MarkupId: m.Id || m.markupId || null,
       FileName: FILE_NAME,
@@ -78,9 +104,14 @@ app.get('/powerbi/markups', async (req, res) => {
       Comment: m.Comment || m.comment || null,
       Author: m.Author || m.displayName || null,
       DateCreated: m.DateCreated || m.created || null,
-      Page: m.Page || m.pageNumber || null
+      DateModified: m.DateModified || m.modified || null,
+      Page: m.Page || m.pageNumber || null,
+      Status: m.Status || m.status || null,
+      Color: m.Color || null,
+      Layer: m.Layer || null
     }));
 
+    console.log(`✅ Returning ${flattened.length} markups`);
     res.json(flattened);
   } catch (error) {
     console.error('❌ Error in /powerbi/markups:', error.message);
@@ -88,39 +119,17 @@ app.get('/powerbi/markups', async (req, res) => {
   }
 });
 
-// 🟢 NEW: Statuses endpoint
-app.get('/powerbi/statuses', async (req, res) => {
-  try {
-    const accessToken = await refreshAccessToken();
-
-    const response = await fetch(`${API_BASE}/sessions/${SESSION_ID}/files/${FILE_ID}/statuses`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        client_id: CLIENT_ID,
-        Accept: 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Failed to get statuses: ${response.status} - ${errText}`);
-    }
-
-    const data = await response.json(); // array of statuses
-
-    const counts = {};
-    for (const status of data) {
-      const label = status.State || 'Unknown';
-      counts[label] = (counts[label] || 0) + 1;
-    }
-
-    res.json(counts);
-  } catch (error) {
-    console.error('❌ Error in /powerbi/statuses:', error.message);
-    res.status(500).json({ error: error.message });
-  }
+// -----------------------------------------------------------------------------
+// ⚠️ Global unhandled error catcher
+// -----------------------------------------------------------------------------
+process.on('unhandledRejection', (reason) => {
+  console.error('⚠️ Unhandled Promise Rejection:', reason);
 });
 
+// -----------------------------------------------------------------------------
+// 🚀 Start server
+// -----------------------------------------------------------------------------
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Markup API Server running at http://localhost:${PORT}`);
+  console.log(`📄 Power BI endpoint: http://localhost:${PORT}/powerbi/markups`);
 });
