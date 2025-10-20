@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const qs = require('querystring'); // for x-www-form-urlencoded body
+const TokenManager = require('./tokenManager'); // ADD THIS LINE
 const app = express();
 const PORT = 3000;
 
@@ -11,7 +11,6 @@ const PORT = 3000;
 const API_BASE = 'https://api.bluebeam.com/publicapi/v2';
 const CLIENT_ID = process.env.BB_CLIENT_ID;
 const CLIENT_SECRET = process.env.BB_CLIENT_SECRET;
-const REFRESH_TOKEN = process.env.BB_REFRESH_TOKEN;
 const SESSION_ID = '928-286-044';
 const FILE_ID = '96495009';
 const FILE_NAME = 'Conceptual Design Set_20251008.pdf';
@@ -23,34 +22,12 @@ app.use(express.static('public'));
 // ESM-compatible fetch wrapper
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
+// Initialize token manager
+const tokenManager = new TokenManager(); // ADD THIS LINE
+
 // -----------------------------------------------------------------------------
-// 🔁 Refresh Bluebeam Access Token
+// REMOVE the old refreshAccessToken() function - we don't need it anymore!
 // -----------------------------------------------------------------------------
-async function refreshAccessToken() {
-  const tokenUrl = 'https://api.bluebeam.com/oauth2/token';
-
-  const payload = {
-    grant_type: 'refresh_token',
-    refresh_token: REFRESH_TOKEN,
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET
-  };
-
-  const response = await fetch(tokenUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: qs.stringify(payload)
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Token refresh failed: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
-  console.log('🔐 Access token refreshed');
-  return data.access_token;
-}
 
 // -----------------------------------------------------------------------------
 // 🔍 Health check
@@ -70,8 +47,8 @@ app.get('/powerbi/markups', async (req, res) => {
   try {
     console.log(`📊 Fetching markups for session ${SESSION_ID}, file ${FILE_ID}...`);
 
-    // Refresh token automatically
-    const accessToken = await refreshAccessToken();
+    // Get valid access token (automatically refreshes if needed)
+    const accessToken = await tokenManager.getValidAccessToken(); // CHANGED THIS LINE
 
     // Fetch markups
     const response = await fetch(
@@ -124,6 +101,13 @@ app.get('/powerbi/markups', async (req, res) => {
 // -----------------------------------------------------------------------------
 process.on('unhandledRejection', (reason) => {
   console.error('⚠️ Unhandled Promise Rejection:', reason);
+});
+
+// Clean up database connection on exit
+process.on('SIGINT', () => {
+  console.log('\n🛑 Shutting down gracefully...');
+  tokenManager.close();
+  process.exit(0);
 });
 
 // -----------------------------------------------------------------------------
