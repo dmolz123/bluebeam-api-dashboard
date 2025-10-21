@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Bluebeam Markup Dashboard</title>
+  <title>Bluebeam API Dashboard Demo</title>
 
   <!-- DataTables + Chart.js CDN -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
@@ -13,76 +13,199 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 0;
+      background-color: #ffffff;
+    }
+
+    /* --- Header --- */
+    header {
+      background-color: #1A5AFF;
+      color: white;
+      padding: 16px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 22px;
+      margin: 0;
+      font-weight: 600;
     }
 
     #refresh {
       padding: 10px 20px;
-      background-color: #1A5AFF;
-      color: white;
+      background-color: white;
+      color: #1A5AFF;
       border: none;
       border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    #refresh:hover {
+      background-color: #e0e7ff;
+    }
+
+    main {
+      padding: 20px 30px;
+    }
+
+    details {
+      margin-top: 10px;
       margin-bottom: 20px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 10px 20px;
+    }
+
+    summary {
+      font-weight: bold;
       cursor: pointer;
     }
 
-    table {
-      width: 100%;
+    /* --- Layout --- */
+    .top-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
       margin-top: 10px;
-      border-collapse: collapse;
-      font-size: 14px;
     }
 
-    th, td {
+    .recent-activity, .status-chart {
+      flex: 1;
+      min-width: 350px;
+    }
+
+    .recent-activity table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .recent-activity th, .recent-activity td {
       padding: 6px 10px;
       border: 1px solid #ccc;
       text-align: left;
     }
 
-    th {
-      background-color: #f5f5f5;
+    .recent-activity th {
+      background-color: #f9f9f9;
     }
 
     canvas {
-      margin-top: 40px;
-      max-height: 300px;
+      margin-top: 20px;
+      width: 100%;
+      max-height: 400px;
     }
 
     .chart-wrapper {
       display: flex;
-      gap: 40px;
       flex-wrap: wrap;
+      gap: 40px;
+      margin-top: 40px;
+    }
+
+    table.dataTable {
+      margin-top: 20px !important;
+      font-size: 14px;
+    }
+
+    footer {
+      text-align: center;
+      color: #666;
+      padding: 20px;
+      font-size: 12px;
     }
   </style>
 </head>
 <body>
 
-  <h2>📝 Bluebeam Markups (Live)</h2>
-  <button id="refresh">🔄 Refresh Data</button>
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <!-- Inline Bluebeam Logo -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" width="38" height="38" fill="white">
+        <circle cx="125" cy="125" r="120" stroke="white" stroke-width="8" fill="none"/>
+        <path fill="white" d="M105 60h70c8 0 15 7 15 15v100c0 8-7 15-15 15h-70c-8 0-15-7-15-15V75c0-8 7-15 15-15zm5 15v90h60V75h-60z"/>
+      </svg>
+      <h1>Bluebeam API Dashboard Demo</h1>
+    </div>
+    <button id="refresh">🔄 Refresh Data</button>
+  </header>
 
-  <table id="markupTable">
-    <thead>
-      <tr>
-        <th>Author</th>
-        <th>Subject</th>
-        <th>Type</th>
-        <th>Status</th>
-        <th>Page</th>
-        <th>Date Created</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <main>
+    <!-- Info / Instructions -->
+    <details>
+      <summary>ℹ️ How to Use This Demo</summary>
+      <div style="padding-top:8px;">
+        <p>1️⃣ Join Studio Session <strong>928-286-044</strong> in Bluebeam Revu.</p>
+        <p>2️⃣ Add or edit markups in the session to generate live data.</p>
+        <p>3️⃣ Click <strong>Refresh Data</strong> to pull the latest markups from the API.</p>
+        <p>This dashboard calls the <code>/powerbi/markups</code> endpoint to visualize real-time markup data from the Bluebeam API.</p>
+      </div>
+    </details>
 
-  <div class="chart-wrapper">
-    <canvas id="subjectChart"></canvas>
-    <canvas id="statusChart"></canvas>
-  </div>
+    <!-- Top Split Section -->
+    <div class="top-section">
+      <div class="recent-activity">
+        <h3>🕒 Recent Activity (Past 24 Hours)</h3>
+        <table id="recentTable">
+          <thead>
+            <tr>
+              <th>Author</th>
+              <th>Subject</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="status-chart">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Main Table -->
+    <h3 style="margin-top:40px;">📋 All Markups (Live)</h3>
+    <table id="markupTable">
+      <thead>
+        <tr>
+          <th>Author</th>
+          <th>Subject</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Page</th>
+          <th>Date Created</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Bar Chart Section -->
+    <div class="chart-wrapper">
+      <canvas id="subjectChart"></canvas>
+    </div>
+  </main>
+
+  <footer>
+    © 2025 Bluebeam, Inc. | Internal Demo Asset – Built by Dylan Molz
+  </footer>
 
   <script>
     const API_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/markups';
     const refreshBtn = document.getElementById('refresh');
-    const tableBody = document.querySelector('#markupTable tbody');
+    const recentBody = document.querySelector('#recentTable tbody');
     const subjectCtx = document.getElementById('subjectChart').getContext('2d');
     const statusCtx = document.getElementById('statusChart').getContext('2d');
 
@@ -111,15 +234,19 @@
 
         const subjectCounts = {};
         const statusCounts = {};
+        const now = Date.now();
+        const oneDay = 24 * 60 * 60 * 1000;
+        const recentData = [];
 
         data.forEach(m => {
+          const dateStr = m.DateCreated ? new Date(m.DateCreated).toLocaleString() : '-';
           const row = [
             m.Author || '-',
             m.Subject || '-',
             m.Type || '-',
             m.Status || '-',
             m.Page || '-',
-            m.DateCreated ? new Date(m.DateCreated).toLocaleString() : '-'
+            dateStr
           ];
           dataTable.row.add(row);
 
@@ -128,33 +255,34 @@
 
           const status = m.Status || 'Unknown';
           statusCounts[status] = (statusCounts[status] || 0) + 1;
+
+          const created = new Date(m.DateCreated);
+          if (created && (now - created.getTime()) < oneDay) {
+            recentData.push({
+              Author: m.Author || '-',
+              Subject: m.Subject || '-',
+              Status: m.Status || '-',
+              Time: created.toLocaleTimeString()
+            });
+          }
         });
 
         dataTable.draw();
 
-        // --- Subject Chart ---
-        if (subjectChart) subjectChart.destroy();
-        subjectChart = new Chart(subjectCtx, {
-          type: 'bar',
-          data: {
-            labels: Object.keys(subjectCounts),
-            datasets: [{
-              label: '# of Markups by Subject',
-              data: Object.values(subjectCounts),
-              backgroundColor: '#1A5AFF'
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { display: false },
-              title: {
-                display: true,
-                text: 'Markups by Subject'
-              }
-            }
-          }
-        });
+        // --- Populate Recent Activity ---
+        recentBody.innerHTML = '';
+        if (recentData.length > 0) {
+          recentData.sort((a, b) => a.Time.localeCompare(b.Time));
+          recentData.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${r.Author}</td><td>${r.Subject}</td><td>${r.Status}</td><td>${r.Time}</td>`;
+            recentBody.appendChild(tr);
+          });
+        } else {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td colspan="4" style="text-align:center;">No activity in past 24 hours</td>`;
+          recentBody.appendChild(tr);
+        }
 
         // --- Status Chart ---
         if (statusChart) statusChart.destroy();
@@ -176,7 +304,37 @@
               title: {
                 display: true,
                 text: 'Markups by Status'
+              },
+              legend: {
+                position: 'bottom'
               }
+            }
+          }
+        });
+
+        // --- Subject Chart ---
+        if (subjectChart) subjectChart.destroy();
+        subjectChart = new Chart(subjectCtx, {
+          type: 'bar',
+          data: {
+            labels: Object.keys(subjectCounts),
+            datasets: [{
+              label: '# of Markups by Subject',
+              data: Object.values(subjectCounts),
+              backgroundColor: '#1A5AFF'
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              title: {
+                display: true,
+                text: 'Markups by Subject'
+              }
+            },
+            scales: {
+              y: { beginAtZero: true }
             }
           }
         });
@@ -196,4 +354,3 @@
 
 </body>
 </html>
-
