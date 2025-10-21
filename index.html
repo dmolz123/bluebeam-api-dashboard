@@ -2,57 +2,125 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bluebeam Markup Dashboard</title>
+  <title>Bluebeam API Dashboard Demo</title>
+
+  <!-- Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 0;
+      background: #f7f8fa;
     }
+
+    /* ===== Header Bar ===== */
+    header {
+      background-color: #1A5AFF;
+      color: white;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-left img {
+      height: 32px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    /* ===== Controls (below header) ===== */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+    }
+
     #refresh {
       padding: 10px 20px;
       background-color: #1A5AFF;
       color: white;
       border: none;
       border-radius: 4px;
-      margin-bottom: 20px;
       cursor: pointer;
     }
+
+    #lastUpdated {
+      color: #444;
+      font-size: 14px;
+    }
+
+    /* ===== Table & Chart ===== */
+    .content {
+      padding: 0 24px 40px;
+    }
+
+    table.dataTable thead th {
+      background-color: #f5f5f5;
+    }
+
     canvas {
       margin-top: 40px;
       max-height: 300px;
     }
-    table.dataTable thead th {
-      background-color: #f5f5f5;
-    }
+
   </style>
 </head>
 <body>
 
-  <h2>📝 Bluebeam Markups (Live)</h2>
-  <button id="refresh">🔄 Refresh Data</button>
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <!-- 👇 Replace this image URL with your GitHub raw link -->
+      <img src="https://raw.githubusercontent.com/dmolz123/bluebeam-api-dashboard/main/public/dashboard.png" alt="Bluebeam Logo">
+      <h1>Bluebeam API Dashboard Demo</h1>
+    </div>
+  </header>
 
-  <table id="markupTable" class="display">
-    <thead>
-      <tr>
-        <th>Author</th>
-        <th>Subject</th>
-        <th>Type</th>
-        <th>Page</th>
-        <th>Date Created</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <!-- Controls -->
+  <div class="controls">
+    <button id="refresh">🔄 Refresh Data</button>
+    <div id="lastUpdated">Last updated: —</div>
+  </div>
 
-  <canvas id="subjectChart"></canvas>
+  <!-- Main Content -->
+  <div class="content">
+    <table id="markupTable" class="display">
+      <thead>
+        <tr>
+          <th>Author</th>
+          <th>Subject</th>
+          <th>Type</th>
+          <th>Page</th>
+          <th>Date Created</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <canvas id="subjectChart"></canvas>
+  </div>
 
   <script>
     const API_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/markups';
     const refreshBtn = document.getElementById('refresh');
+    const lastUpdated = document.getElementById('lastUpdated');
     const ctx = document.getElementById('subjectChart').getContext('2d');
 
     let chartInstance;
@@ -72,13 +140,11 @@
           return;
         }
 
-        // Clear existing table if exists
-        if (dataTable) {
-          dataTable.clear().destroy();
-        }
+        // Clear & rebuild table
+        if (dataTable) dataTable.clear().destroy();
 
         const tableBody = document.querySelector('#markupTable tbody');
-        tableBody.innerHTML = ''; // Clear previous rows
+        tableBody.innerHTML = '';
 
         data.forEach(m => {
           const row = document.createElement('tr');
@@ -92,13 +158,12 @@
           tableBody.appendChild(row);
         });
 
-        // Activate DataTables
         dataTable = new DataTable('#markupTable', {
-          order: [[4, 'desc']], // Default sort: Date Created descending
+          order: [[4, 'desc']],
           pageLength: 25
         });
 
-        // Chart - Subject count
+        // Chart - Markups by Subject
         const counts = {};
         data.forEach(m => {
           const subject = m.Subject || 'Unknown';
@@ -131,6 +196,10 @@
           }
         });
 
+        // Update timestamp
+        const now = new Date();
+        lastUpdated.textContent = `Last updated: ${now.toLocaleString()}`;
+
       } catch (err) {
         alert('Failed to load data.');
         console.error(err);
@@ -141,7 +210,7 @@
     }
 
     refreshBtn.addEventListener('click', fetchAndRender);
-    fetchAndRender(); // auto-load on page open
+    window.addEventListener('DOMContentLoaded', fetchAndRender);
   </script>
 </body>
 </html>
