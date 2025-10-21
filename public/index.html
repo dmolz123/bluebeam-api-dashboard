@@ -132,11 +132,7 @@
   <!-- Header -->
   <header>
     <div class="header-left">
-      <!-- Inline Bluebeam Logo -->
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" width="38" height="38" fill="white">
-        <circle cx="125" cy="125" r="120" stroke="white" stroke-width="8" fill="none"/>
-        <path fill="white" d="M105 60h70c8 0 15 7 15 15v100c0 8-7 15-15 15h-70c-8 0-15-7-15-15V75c0-8 7-15 15-15zm5 15v90h60V75h-60z"/>
-      </svg>
+      <img src="./dashboard.png" alt="Bluebeam Logo" width="38" height="38" style="object-fit:contain;">
       <h1>Bluebeam API Dashboard Demo</h1>
     </div>
     <button id="refresh">🔄 Refresh Data</button>
@@ -147,7 +143,7 @@
     <details>
       <summary>ℹ️ How to Use This Demo</summary>
       <div style="padding-top:8px;">
-        <p>1️⃣ Join Studio Session <strong>928-286-044</strong> in Bluebeam Revu.</p>
+        <p>1️⃣ Join Studio Session <strong>928-286-044</strong>.</p>
         <p>2️⃣ Add or edit markups in the session to generate live data.</p>
         <p>3️⃣ Click <strong>Refresh Data</strong> to pull the latest markups from the API.</p>
         <p>This dashboard calls the <code>/powerbi/markups</code> endpoint to visualize real-time markup data from the Bluebeam API.</p>
@@ -177,7 +173,7 @@
     </div>
 
     <!-- Main Table -->
-    <h3 style="margin-top:40px;">📋 All Markups (Live)</h3>
+    <h3 style="margin-top:40px;">📋 All Markups</h3>
     <table id="markupTable">
       <thead>
         <tr>
