@@ -61,7 +61,6 @@ class TokenManager {
 
   async getTokens() {
     await this.initPromise;
-    
     return new Promise((resolve, reject) => {
       this.db.get(
         'SELECT access_token, refresh_token, expires_at FROM tokens LIMIT 1',
@@ -76,7 +75,6 @@ class TokenManager {
 
   async refreshAccessToken(refreshToken) {
     const tokenUrl = 'https://api.bluebeam.com/oauth2/token';
-
     const payload = {
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
@@ -102,14 +100,13 @@ class TokenManager {
 
   async getValidAccessToken() {
     await this.initPromise;
-    
     const tokens = await this.getTokens();
 
     // If no tokens exist, bootstrap from environment variable
     if (!tokens) {
       console.log('⚠️ No tokens in database, bootstrapping from environment...');
       const initialRefreshToken = process.env.BB_REFRESH_TOKEN;
-      
+
       if (!initialRefreshToken) {
         throw new Error('No tokens in database and no BB_REFRESH_TOKEN in environment');
       }
@@ -120,7 +117,7 @@ class TokenManager {
         newTokens.refresh_token,
         newTokens.expires_in
       );
-      
+
       console.log('🔐 Initial tokens saved to database');
       return newTokens.access_token;
     }
@@ -132,26 +129,26 @@ class TokenManager {
       return tokens.access_token;
     }
 
-     // Token expired, refresh it
-  console.log('🔄 Access token expired, refreshing...');
-  const newTokens = await this.refreshAccessToken(tokens.refresh_token);
-  await this.saveTokens(
-    newTokens.access_token,
-    newTokens.refresh_token,
-    newTokens.expires_in
-  );
-  
-  // 👇 Add this line
-  console.log(`🔁 Token refreshed successfully at ${new Date().toISOString()}`);
-  console.log(`   🔸 Expires in: ${newTokens.expires_in / 60} minutes`);
-  console.log(`   🔸 Access token preview: ${newTokens.access_token?.slice(0, 25)}...`);
-  
-  return newTokens.access_token;
+    // Token expired, refresh it
+    console.log('🔄 Access token expired, refreshing...');
+    const newTokens = await this.refreshAccessToken(tokens.refresh_token);
+    await this.saveTokens(
+      newTokens.access_token,
+      newTokens.refresh_token,
+      newTokens.expires_in
+    );
+
+    // 👇 Added detailed log
+    console.log(`🔁 Token refreshed successfully at ${new Date().toISOString()}`);
+    console.log(`   🔸 Expires in: ${(newTokens.expires_in / 60).toFixed(1)} minutes`);
+    console.log(`   🔸 Access token preview: ${newTokens.access_token?.slice(0, 25)}...`);
+
+    console.log('🔐 Access token refreshed and saved');
+    return newTokens.access_token;
+  }
 
   close() {
-    if (this.db) {
-      this.db.close();
-    }
+    if (this.db) this.db.close();
   }
 }
 
