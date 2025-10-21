@@ -132,18 +132,21 @@ class TokenManager {
       return tokens.access_token;
     }
 
-    // Token expired, refresh it
-    console.log('🔄 Access token expired, refreshing...');
-    const newTokens = await this.refreshAccessToken(tokens.refresh_token);
-    await this.saveTokens(
-      newTokens.access_token,
-      newTokens.refresh_token,
-      newTokens.expires_in
-    );
-    
-    console.log('🔐 Access token refreshed and saved');
-    return newTokens.access_token;
-  }
+     // Token expired, refresh it
+  console.log('🔄 Access token expired, refreshing...');
+  const newTokens = await this.refreshAccessToken(tokens.refresh_token);
+  await this.saveTokens(
+    newTokens.access_token,
+    newTokens.refresh_token,
+    newTokens.expires_in
+  );
+  
+  // 👇 Add this line
+  console.log(`🔁 Token refreshed successfully at ${new Date().toISOString()}`);
+  console.log(`   🔸 Expires in: ${newTokens.expires_in / 60} minutes`);
+  console.log(`   🔸 Access token preview: ${newTokens.access_token?.slice(0, 25)}...`);
+  
+  return newTokens.access_token;
 
   close() {
     if (this.db) {
