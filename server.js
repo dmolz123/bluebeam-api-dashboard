@@ -12,8 +12,8 @@ const API_BASE = 'https://api.bluebeam.com/publicapi/v2';
 const CLIENT_ID = process.env.BB_CLIENT_ID;
 const CLIENT_SECRET = process.env.BB_CLIENT_SECRET;
 const SESSION_ID = '515-659-145';
-const FILE_ID = '96495009';
-const FILE_NAME = 'Conceptual Design Set_20251008.pdf';
+const FILE_ID = '98061063';
+const FILE_NAME = 'Chicago Office Complete Document (API Demo).pdf';
 
 app.use(cors());
 app.use(express.json());
