@@ -11,7 +11,7 @@ const PORT = 3000;
 const API_BASE = 'https://api.bluebeam.com/publicapi/v2';
 const CLIENT_ID = process.env.BB_CLIENT_ID;
 const CLIENT_SECRET = process.env.BB_CLIENT_SECRET;
-const SESSION_ID = '928-286-044';
+const SESSION_ID = '515-659-145';
 const FILE_ID = '96495009';
 const FILE_NAME = 'Conceptual Design Set_20251008.pdf';
 
