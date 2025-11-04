@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Bluebeam API Dashboard Demo</title>
- <link rel="icon" type="image/png" href="/dashboard.png">
+  <link rel="icon" type="image/png" href="/dashboard.png">
 
   <!-- Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -33,7 +33,6 @@
       font-weight: 600;
     }
 
-    /* ===== Controls (below header) ===== */
     .controls {
       display: flex;
       align-items: center;
@@ -41,7 +40,7 @@
       padding: 16px 24px;
       background: #fff;
       border-bottom: 1px solid #ddd;
-      justify-content: flex-start; /* 👈 keep items on the left */
+      justify-content: flex-start;
     }
 
     #refresh {
@@ -58,9 +57,14 @@
       font-size: 14px;
     }
 
-    /* ===== Table & Chart ===== */
     .content {
       padding: 0 24px 40px;
+    }
+
+    h2 {
+      margin-top: 40px;
+      font-size: 18px;
+      color: #333;
     }
 
     table.dataTable thead th {
@@ -71,50 +75,67 @@
       margin-top: 40px;
       max-height: 300px;
     }
-
   </style>
 </head>
 <body>
 
-  <!-- Header -->
   <header>
     <div class="header-left">
-    <h1>Bluebeam API Dashboard Demo</h1>
+      <h1>Bluebeam API Dashboard Demo</h1>
     </div>
   </header>
 
-  <!-- Controls -->
   <div class="controls">
     <button id="refresh">🔄 Refresh Data</button>
     <div id="lastUpdated">Last updated: —</div>
   </div>
 
-  <!-- Main Content -->
   <div class="content">
-    <table id="markupTable" class="display">
+    <!-- Recent Activity -->
+    <h2>🕓 Recent Activity (Past 24 Hours)</h2>
+    <table id="recentTable" class="display">
       <thead>
         <tr>
           <th>Author</th>
-          <th>Subject</th>
-          <th>Type</th>
-          <th>Page</th>
-          <th>Date Created</th>
+          <th>Comments</th>
+          <th>Status</th>
+          <th>Time (EST)</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
 
-    <canvas id="subjectChart"></canvas>
+    <!-- All Markups -->
+    <h2>📄 All Markups</h2>
+    <table id="markupTable" class="display">
+      <thead>
+        <tr>
+          <th>Author</th>
+          <th>Comments</th>
+          <th>Status</th>
+          <th>Page</th>
+          <th>Date Created (EST)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <canvas id="activityChart"></canvas>
   </div>
 
   <script>
     const API_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/markups';
     const refreshBtn = document.getElementById('refresh');
     const lastUpdated = document.getElementById('lastUpdated');
-    const ctx = document.getElementById('subjectChart').getContext('2d');
+    const ctx = document.getElementById('activityChart').getContext('2d');
 
     let chartInstance;
     let dataTable;
+    let recentTable;
+
+    function formatEST(dateString) {
+      return new Date(dateString).toLocaleString('en-US', { timeZone: 'America/New_York' });
+    }
 
     async function fetchAndRender() {
       refreshBtn.disabled = true;
@@ -130,38 +151,52 @@
           return;
         }
 
-        // Clear & rebuild table
-        if (dataTable) dataTable.clear().destroy();
+        // Filter Recent Activity (last 24 hours)
+        const now = new Date();
+        const past24h = data.filter(m => (now - new Date(m.DateCreated)) < 24 * 60 * 60 * 1000);
 
+        // ===== Recent Table =====
+        if (recentTable) recentTable.clear().destroy();
+        const recentBody = document.querySelector('#recentTable tbody');
+        recentBody.innerHTML = '';
+        past24h.forEach(m => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${m.Author || '-'}</td>
+            <td>${m.Comments || '-'}</td>
+            <td>${m.Status || '-'}</td>
+            <td>${formatEST(m.DateCreated)}</td>
+          `;
+          recentBody.appendChild(row);
+        });
+        recentTable = new DataTable('#recentTable', { order: [[3, 'desc']], pageLength: 5 });
+
+        // ===== All Markups Table =====
+        if (dataTable) dataTable.clear().destroy();
         const tableBody = document.querySelector('#markupTable tbody');
         tableBody.innerHTML = '';
-
         data.forEach(m => {
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${m.Author || '-'}</td>
-            <td>${m.Subject || '-'}</td>
-            <td>${m.Type || '-'}</td>
+            <td>${m.Comments || '-'}</td>
+            <td>${m.Status || '-'}</td>
             <td>${m.Page || '-'}</td>
-            <td>${new Date(m.DateCreated).toLocaleString()}</td>
+            <td>${formatEST(m.DateCreated)}</td>
           `;
           tableBody.appendChild(row);
         });
+        dataTable = new DataTable('#markupTable', { order: [[4, 'desc']], pageLength: 25 });
 
-        dataTable = new DataTable('#markupTable', {
-          order: [[4, 'desc']],
-          pageLength: 25
-        });
-
-        // Chart - Markups by Subject
-        const counts = {};
+        // ===== Activity by Day Chart =====
+        const countsByDay = {};
         data.forEach(m => {
-          const subject = m.Subject || 'Unknown';
-          counts[subject] = (counts[subject] || 0) + 1;
+          const day = new Date(m.DateCreated).toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+          countsByDay[day] = (countsByDay[day] || 0) + 1;
         });
 
-        const labels = Object.keys(counts);
-        const values = Object.values(counts);
+        const labels = Object.keys(countsByDay);
+        const values = Object.values(countsByDay);
 
         if (chartInstance) chartInstance.destroy();
         chartInstance = new Chart(ctx, {
@@ -169,7 +204,7 @@
           data: {
             labels,
             datasets: [{
-              label: '# of Markups by Subject',
+              label: 'Markups per Day',
               data: values,
               backgroundColor: '#1A5AFF'
             }]
@@ -178,17 +213,18 @@
             responsive: true,
             plugins: {
               legend: { display: false },
-              title: {
-                display: true,
-                text: 'Markups by Subject'
-              }
+              title: { display: true, text: 'Markup Activity Over Time' }
+            },
+            scales: {
+              x: { title: { display: true, text: 'Date (EST)' } },
+              y: { title: { display: true, text: 'Count' }, beginAtZero: true }
             }
           }
         });
 
-        // Update timestamp
-        const now = new Date();
-        lastUpdated.textContent = `Last updated: ${now.toLocaleString()}`;
+        // ===== Update timestamp =====
+        const updated = new Date();
+        lastUpdated.textContent = `Last updated: ${formatEST(updated)}`;
 
       } catch (err) {
         alert('Failed to load data.');
@@ -204,5 +240,3 @@
   </script>
 </body>
 </html>
-
-
