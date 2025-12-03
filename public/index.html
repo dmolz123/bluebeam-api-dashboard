@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bluebeam API Dashboard Demo</title>
+  <title>Bluebeam API Demo Dashboard</title>
   <link rel="icon" type="image/png" href="/dashboard.png">
 
   <!-- Dependencies -->
@@ -21,7 +21,7 @@
     header {
       background-color: #1A5AFF;
       color: white;
-      padding: 12px 24px;
+      padding: 14px 24px;
       display: flex;
       align-items: center;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -29,9 +29,46 @@
 
     h1 {
       margin: 0;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 600;
     }
+
+    /* ------------------- TAB BAR ------------------- */
+    .tabs {
+      display: flex;
+      background: #ffffff;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .tab {
+      padding: 12px 20px;
+      font-size: 15px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      border-right: 1px solid #eee;
+      transition: 0.2s;
+    }
+
+    .tab:hover {
+      background: #eef3ff;
+    }
+
+    .tab.active {
+      background: #1A5AFF;
+      color: white;
+      font-weight: bold;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* -------------- Markup Dashboard Styles -------------- */
 
     .controls {
       display: flex;
@@ -60,11 +97,6 @@
       padding: 0 24px 40px;
     }
 
-    h2 {
-      font-size: 18px;
-      color: #333;
-    }
-
     details {
       background: #fff;
       padding: 12px 16px;
@@ -77,10 +109,6 @@
       font-weight: 600;
       cursor: pointer;
       color: #1A5AFF;
-    }
-
-    table.dataTable thead th {
-      background-color: #f5f5f5;
     }
 
     .chart-row {
@@ -103,82 +131,172 @@
       max-height: 320px;
       width: 100%;
     }
+
+    table.dataTable thead th {
+      background-color: #f5f5f5;
+    }
+
+    /* -------------- Session Closeout Styles -------------- */
+
+    .closeout-input-row {
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .closeout-input {
+      padding: 8px;
+      width: 260px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .btn-blue {
+      padding: 8px 14px;
+      background: #1A5AFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-blue:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
 
+  <!-- Header -->
   <header>
-    <div class="header-left">
-      <h1>Bluebeam API Dashboard Demo</h1>
-    </div>
+    <h1>Bluebeam API Demo Dashboard</h1>
   </header>
 
-  <div class="controls">
-    <button id="refresh">🔄 Refresh Data</button>
-    <div id="lastUpdated">Last updated: —</div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-target="#tab-markups">📝 Markup API Dashboard</button>
+    <button class="tab" data-target="#tab-closeout">📁 Session File Closeout</button>
   </div>
 
-  <div class="content">
-    <!-- Collapsible Instructions -->
-    <details open>
-      <summary>ℹ️ How to Use This Demo</summary>
-      <p>This dashboard is a demonstration of how data from the <strong>Bluebeam Markup API</strong> can be visualized in real time through a lightweight web application.</p>
-      <ul>
-        <li>Use <strong>Refresh Data</strong> to pull the latest markup information from the API (via Session 515-659-145).</li>
-        <li>The <strong>Recent Activity</strong> section shows markups created or updated in the past 24 hours.</li>
-        <li>The <strong>Markups by Status</strong> chart visualizes workflow stages (e.g., Pending, Rejected, Approved).</li>
-        <li>The <strong>All Markups</strong> table provides a full list of activity with sorting and search capabilities.</li>
-        <li>The <strong>Activity Over Time</strong> chart shows how many markups were created per day.</li>
-      </ul>
-      <p><em>Note: This demo is for illustrative purposes only. Bluebeam cannot develop or host custom dashboards for customers. For API documentation, visit the <a href="https://developers.bluebeam.com" target="_blank">Bluebeam Developer Portal</a>.</em></p>
-    </details>
+  <!-- TAB CONTENT 1: MARKUP API DASHBOARD -->
+  <div id="tab-markups" class="tab-content active">
 
-    <!-- Top Row: Recent Activity (Left) + Pie Chart (Right) -->
-    <div class="chart-row" style="align-items:flex-start;">
-      <div class="chart-container">
-        <h2>🕓 Recent Activity (Past 24 Hours)</h2>
-        <table id="recentTable" class="display">
-          <thead>
-            <tr>
-              <th>Author</th>
-              <th>Comments</th>
-              <th>Status</th>
-              <th>Time (EST)</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <div class="chart-container">
-        <canvas id="statusChart"></canvas>
-      </div>
+    <div class="controls">
+      <button id="refresh">🔄 Refresh Data</button>
+      <div id="lastUpdated">Last updated: —</div>
     </div>
 
-    <!-- All Markups -->
-    <h2 style="margin-top:40px;">📄 All Markups</h2>
-    <table id="markupTable" class="display">
-      <thead>
-        <tr>
-          <th>Author</th>
-          <th>Comments</th>
-          <th>Status</th>
-          <th>Page</th>
-          <th>Date Created (EST)</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="content">
 
-    <div class="chart-row">
-      <div class="chart-container">
-        <canvas id="activityChart"></canvas>
+      <!-- Collapsible Instructions -->
+      <details open>
+        <summary>ℹ️ How to Use This Demo</summary>
+        <p>This dashboard visualizes real-time data pulled from the <strong>Bluebeam Markup API</strong> using Session <strong>515-659-145</strong>.</p>
+        <ul>
+          <li>Click <strong>Refresh Data</strong> to pull the latest markups.</li>
+          <li>View workflow stages, trends over time, and activity summaries.</li>
+          <li>Use the sortable table to explore all markups.</li>
+        </ul>
+      </details>
+
+      <!-- Top Row -->
+      <div class="chart-row">
+        <div class="chart-container">
+          <h2>🕓 Recent Activity (Past 24 Hours)</h2>
+          <table id="recentTable" class="display">
+            <thead>
+              <tr>
+                <th>Author</th>
+                <th>Comments</th>
+                <th>Status</th>
+                <th>Time (EST)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="statusChart"></canvas>
+        </div>
       </div>
+
+      <h2 style="margin-top:40px;">📄 All Markups</h2>
+      <table id="markupTable" class="display">
+        <thead>
+          <tr>
+            <th>Author</th>
+            <th>Comments</th>
+            <th>Status</th>
+            <th>Page</th>
+            <th>Date Created (EST)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="chart-row">
+        <div class="chart-container">
+          <canvas id="activityChart"></canvas>
+        </div>
+      </div>
+
     </div>
   </div>
 
+  <!-- TAB CONTENT 2: SESSION FILE CLOSEOUT -->
+  <div id="tab-closeout" class="tab-content">
+
+    <div class="content">
+
+      <h2>📁 Session File Closeout Demo</h2>
+      <p>Automatically merge Session files back into the Project, remove them from the Session, and check them in — all with one click.</p>
+
+      <div class="closeout-input-row">
+        <input id="sessionInput" class="closeout-input" placeholder="Enter Session ID">
+        <button id="loadSessionFiles" class="btn-blue">Load Files</button>
+      </div>
+
+      <table id="sessionFilesTable" class="display" style="margin-top:20px; width:100%;">
+        <thead>
+          <tr>
+            <th>File Name</th>
+            <th>Session File ID</th>
+            <th>Project File ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
   <script>
-    const API_URL = 'https://bluebeam-api-dashboard.onrender.com/powerbi/markups';
+    /* ---------------- TAB SWITCHING ---------------- */
+    document.addEventListener("DOMContentLoaded", () => {
+      const tabs = document.querySelectorAll(".tab");
+      const contents = document.querySelectorAll(".tab-content");
+
+      tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+          tabs.forEach(t => t.classList.remove("active"));
+          contents.forEach(c => c.classList.remove("active"));
+
+          tab.classList.add("active");
+          const target = document.querySelector(tab.dataset.target);
+          target.classList.add("active");
+        });
+      });
+    });
+
+    /* ---------------- MARKUP DASHBOARD ---------------- */
+
+    const API_URL = '/powerbi/markups';
     const refreshBtn = document.getElementById('refresh');
     const lastUpdated = document.getElementById('lastUpdated');
     const ctxStatus = document.getElementById('statusChart').getContext('2d');
@@ -207,7 +325,7 @@
         const now = new Date();
         const past24h = data.filter(m => (now - new Date(m.DateCreated)) < 24 * 60 * 60 * 1000);
 
-        // ===== Recent Activity Table =====
+        /* Recent Table */
         if (recentTable) recentTable.clear().destroy();
         const recentBody = document.querySelector('#recentTable tbody');
         recentBody.innerHTML = '';
@@ -223,7 +341,7 @@
         });
         recentTable = new DataTable('#recentTable', { order: [[3, 'desc']], pageLength: 5 });
 
-        // ===== All Markups Table =====
+        /* All Markups Table */
         if (dataTable) dataTable.clear().destroy();
         const tableBody = document.querySelector('#markupTable tbody');
         tableBody.innerHTML = '';
@@ -240,12 +358,13 @@
         });
         dataTable = new DataTable('#markupTable', { order: [[4, 'desc']], pageLength: 25 });
 
-        // ===== Chart 1: Markups by Status (Pie) =====
+        /* Pie Chart */
         const statusCounts = {};
         data.forEach(m => {
           const status = m.Status || 'Unknown';
           statusCounts[status] = (statusCounts[status] || 0) + 1;
         });
+
         const statusLabels = Object.keys(statusCounts);
         const statusValues = Object.values(statusCounts);
 
@@ -254,61 +373,33 @@
           type: 'pie',
           data: {
             labels: statusLabels,
-            datasets: [{
-              data: statusValues,
-              backgroundColor: ['#1A5AFF', '#00B8A9', '#F9ED69', '#F08A5D', '#B83B5E']
-            }]
+            datasets: [{ data: statusValues, backgroundColor: ['#1A5AFF', '#00B8A9', '#F9ED69', '#F08A5D', '#B83B5E'] }]
           },
-          options: {
-            responsive: true,
-            plugins: {
-              title: { display: true, text: 'Markups by Status' },
-              legend: { position: 'bottom' }
-            }
-          }
+          options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
         });
 
-        // ===== Chart 2: Markup Activity Over Time (Line) =====
+        /* Activity Chart */
         const countsByDay = {};
         data.forEach(m => {
           const day = new Date(m.DateCreated).toLocaleDateString('en-US', { timeZone: 'America/New_York' });
           countsByDay[day] = (countsByDay[day] || 0) + 1;
         });
 
-        const labels = Object.keys(countsByDay);
-        const values = Object.values(countsByDay);
-
         if (activityChart) activityChart.destroy();
         activityChart = new Chart(ctxActivity, {
           type: 'line',
           data: {
-            labels,
+            labels: Object.keys(countsByDay),
             datasets: [{
               label: 'Markups per Day',
-              data: values,
-              fill: false,
+              data: Object.values(countsByDay),
               borderColor: '#1A5AFF',
-              tension: 0.3,
-              pointRadius: 4,
-              pointBackgroundColor: '#1A5AFF'
+              tension: 0.3
             }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              title: { display: true, text: 'Markup Activity Over Time' },
-              legend: { display: false }
-            },
-            scales: {
-              x: { title: { display: true, text: 'Date (EST)' } },
-              y: { title: { display: true, text: 'Count' }, beginAtZero: true, ticks: { stepSize: 1 } }
-            }
           }
         });
 
-        // ===== Update timestamp =====
-        const updated = new Date();
-        lastUpdated.textContent = `Last updated: ${formatEST(updated)}`;
+        lastUpdated.textContent = `Last updated: ${formatEST(new Date())}`;
 
       } catch (err) {
         alert('Failed to load data.');
@@ -321,6 +412,70 @@
 
     refreshBtn.addEventListener('click', fetchAndRender);
     window.addEventListener('DOMContentLoaded', fetchAndRender);
+
+    /* ---------------- SESSION FILE CLOSEOUT ---------------- */
+
+    const loadBtn = document.getElementById("loadSessionFiles");
+    const sessionInput = document.getElementById("sessionInput");
+
+    if (loadBtn) {
+      loadBtn.addEventListener("click", async () => {
+        const sessionId = sessionInput.value.trim();
+        if (!sessionId) return alert("Enter a valid Session ID");
+
+        const res = await fetch(`/api/session/${sessionId}/files`);
+        const files = await res.json();
+
+        const tbody = document.querySelector("#sessionFilesTable tbody");
+        tbody.innerHTML = "";
+
+        files.forEach(f => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${f.fileName}</td>
+            <td>${f.sessionFileId}</td>
+            <td>${f.projectFileId}</td>
+            <td>
+              <button class="closeoutBtn btn-blue" 
+                      data-session="${sessionId}"
+                      data-sessionfile="${f.sessionFileId}"
+                      data-project="${f.projectId}"
+                      data-projectfile="${f.projectFileId}">
+                Close Out
+              </button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        document.querySelectorAll(".closeoutBtn").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const sessionId = btn.dataset.session;
+            const sessionFileId = btn.dataset.sessionfile;
+            const projectId = btn.dataset.project;
+            const projectFileId = btn.dataset.projectfile;
+
+            btn.disabled = true;
+            btn.textContent = "Processing...";
+
+            const resp = await fetch(`/api/closeout-file`, {
+              method: "POST",
+              headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({ sessionId, sessionFileId, projectId, projectFileId })
+            });
+
+            if (resp.ok) {
+              btn.textContent = "✔ Done";
+            } else {
+              btn.textContent = "Error";
+              alert("Closeout failed. Check server logs.");
+            }
+          });
+        });
+
+      });
+    }
   </script>
+
 </body>
 </html>
