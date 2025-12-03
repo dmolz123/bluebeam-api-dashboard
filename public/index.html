@@ -141,18 +141,6 @@
 
     /* -------------- Session Closeout Styles -------------- */
 
-    .closeout-input-row {
-      margin-top: 20px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .closeout-input-label {
-      font-size: 14px;
-      color: #333;
-    }
-
     .btn-blue {
       padding: 8px 14px;
       background: #1a5aff;
@@ -230,6 +218,7 @@
     }
   </style>
 </head>
+
 <body>
   <!-- Header -->
   <header>
@@ -238,15 +227,11 @@
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab active" data-target="#tab-markups">
-      📝 Markup API Dashboard
-    </button>
-    <button class="tab" data-target="#tab-closeout">
-      📁 Session File Closeout
-    </button>
+    <button class="tab active" data-target="#tab-markups">📝 Markup API Dashboard</button>
+    <button class="tab" data-target="#tab-closeout">📁 Session File Closeout</button>
   </div>
 
-  <!-- TAB CONTENT 1: MARKUP API DASHBOARD -->
+  <!-- TAB 1: MARKUP DASHBOARD -->
   <div id="tab-markups" class="tab-content active">
     <div class="controls">
       <button id="refresh">🔄 Refresh Data</button>
@@ -254,22 +239,11 @@
     </div>
 
     <div class="content">
-      <!-- Collapsible Instructions -->
       <details open>
         <summary>ℹ️ How to Use This Demo</summary>
-        <p>
-          This dashboard visualizes real-time data pulled from the
-          <strong>Bluebeam Markup API</strong> using Session
-          <strong>515-659-145</strong>.
-        </p>
-        <ul>
-          <li>Click <strong>Refresh Data</strong> to pull the latest markups.</li>
-          <li>View workflow stages, trends over time, and activity summaries.</li>
-          <li>Use the sortable table to explore all markups.</li>
-        </ul>
+        <p>This dashboard visualizes real-time data via the <strong>Bluebeam Markup API (v2)</strong>.</p>
       </details>
 
-      <!-- Top Row -->
       <div class="chart-row">
         <div class="chart-container">
           <h2>🕓 Recent Activity (Past 24 Hours)</h2>
@@ -291,7 +265,7 @@
         </div>
       </div>
 
-      <h2 style="margin-top: 40px">📄 All Markups</h2>
+      <h2 style="margin-top:40px;">📄 All Markups</h2>
       <table id="markupTable" class="display">
         <thead>
           <tr>
@@ -313,29 +287,25 @@
     </div>
   </div>
 
-  <!-- TAB CONTENT 2: SESSION FILE CLOSEOUT -->
+  <!-- TAB 2: SESSION FILE CLOSEOUT -->
   <div id="tab-closeout" class="tab-content">
     <div class="content">
-      <h2>📁 Session File Closeout Demo</h2>
+      <h2>📁 Session File Closeout</h2>
       <p>
-        This demo uses a fixed Session (<strong>693-759-210</strong>) and
-        Project (<strong>564-177-023</strong>) to show how you can automate:
-        updating the project copy, removing a file from the session, and
-        checking it back in with a single click.
+        This PoC uses a fixed Session (<strong>693-759-210</strong>) and Project (<strong>564-177-023</strong>).  
+        Clicking <strong>Load Files</strong> retrieves all files inside the Session, and clicking  
+        <strong>Close Out</strong> runs:
       </p>
 
-      <div class="closeout-input-row">
-        <span class="closeout-input-label">
-          Using Session ID: <strong>693-759-210</strong>
-        </span>
-        <button id="loadSessionFiles" class="btn-blue">Load Files</button>
-      </div>
+      <ul>
+        <li>1️⃣ Update project copy</li>
+        <li>2️⃣ Remove file from session</li>
+        <li>3️⃣ Check project file back in</li>
+      </ul>
 
-      <table
-        id="sessionFilesTable"
-        class="display"
-        style="margin-top: 20px; width: 100%"
-      >
+      <button id="loadSessionFiles" class="btn-blue">Load Files</button>
+
+      <table id="sessionFilesTable" class="display" style="margin-top:20px; width:100%;">
         <thead>
           <tr>
             <th>File Name</th>
@@ -353,40 +323,37 @@
   <div id="progressModal" class="modal-overlay">
     <div class="modal-content">
       <h3>Closing Out File</h3>
+
       <ul class="progress-list">
         <li id="step-update" class="pending">1. Update project copy</li>
         <li id="step-remove" class="pending">2. Remove file from session</li>
         <li id="step-checkin" class="pending">3. Check file back into project</li>
       </ul>
-      <div id="progressMessage" class="progress-message">
-        Running closeout steps…
-      </div>
-      <div id="progressError" class="error-text" style="display: none"></div>
-      <button
-        id="modalCloseBtn"
-        class="btn-blue"
-        style="display: none; margin-top: 12px"
-      >
+
+      <div id="progressMessage" class="progress-message">Running closeout steps…</div>
+      <div id="progressError" class="error-text" style="display:none;"></div>
+
+      <button id="modalCloseBtn" class="btn-blue" style="display:none; margin-top:12px;">
         Close
       </button>
     </div>
   </div>
 
-  <!-- SCRIPTS -->
+  <!-- SCRIPT -->
   <script>
+
     /* ---------------- TAB SWITCHING ---------------- */
-    document.addEventListener('DOMContentLoaded', () => {
-      const tabs = document.querySelectorAll('.tab');
-      const contents = document.querySelectorAll('.tab-content');
+    document.addEventListener("DOMContentLoaded", () => {
+      const tabs = document.querySelectorAll(".tab");
+      const contents = document.querySelectorAll(".tab-content");
 
-      tabs.forEach((tab) => {
-        tab.addEventListener('click', () => {
-          tabs.forEach((t) => t.classList.remove('active'));
-          contents.forEach((c) => c.classList.remove('active'));
+      tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+          tabs.forEach(t => t.classList.remove("active"));
+          contents.forEach(c => c.classList.remove("active"));
 
-          tab.classList.add('active');
-          const target = document.querySelector(tab.dataset.target);
-          target.classList.add('active');
+          tab.classList.add("active");
+          document.querySelector(tab.dataset.target).classList.add("active");
         });
       });
     });
@@ -397,16 +364,12 @@
     const refreshBtn = document.getElementById('refresh');
     const lastUpdated = document.getElementById('lastUpdated');
     const ctxStatus = document.getElementById('statusChart').getContext('2d');
-    const ctxActivity = document
-      .getElementById('activityChart')
-      .getContext('2d');
+    const ctxActivity = document.getElementById('activityChart').getContext('2d');
 
     let statusChart, activityChart, dataTable, recentTable;
 
     function formatEST(dateString) {
-      return new Date(dateString).toLocaleString('en-US', {
-        timeZone: 'America/New_York'
-      });
+      return new Date(dateString).toLocaleString('en-US', { timeZone: 'America/New_York' });
     }
 
     async function fetchAndRender() {
@@ -418,115 +381,83 @@
         const data = await res.json();
 
         if (!Array.isArray(data)) {
-          console.error('Unexpected response:', data);
-          alert('Error loading data. Check console.');
+          alert('Unexpected response from backend.');
           return;
         }
 
         const now = new Date();
-        const past24h = data.filter(
-          (m) => now - new Date(m.DateCreated) < 24 * 60 * 60 * 1000
-        );
+        const last24 = data.filter(m => now - new Date(m.DateCreated) < 86400000);
 
-        /* Recent Table */
+        /* --- Populate Recent Table --- */
         if (recentTable) recentTable.clear().destroy();
-        const recentBody = document.querySelector('#recentTable tbody');
-        recentBody.innerHTML = '';
-        past24h.forEach((m) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${m.Author || '-'}</td>
-            <td>${m.Comments || '-'}</td>
-            <td>${m.Status || '-'}</td>
-            <td>${formatEST(m.DateCreated)}</td>
-          `;
-          recentBody.appendChild(row);
+        const body1 = document.querySelector('#recentTable tbody');
+        body1.innerHTML = '';
+        last24.forEach(m => {
+          body1.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>${m.Author || '-'}</td>
+              <td>${m.Comments || '-'}</td>
+              <td>${m.Status || '-'}</td>
+              <td>${formatEST(m.DateCreated)}</td>
+            </tr>
+          `);
         });
-        recentTable = new DataTable('#recentTable', {
-          order: [[3, 'desc']],
-          pageLength: 5
-        });
+        recentTable = new DataTable('#recentTable', { order: [[3, 'desc']], pageLength: 5 });
 
-        /* All Markups Table */
+        /* --- Populate All Markups Table --- */
         if (dataTable) dataTable.clear().destroy();
-        const tableBody = document.querySelector('#markupTable tbody');
-        tableBody.innerHTML = '';
-        data.forEach((m) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${m.Author || '-'}</td>
-            <td>${m.Comments || '-'}</td>
-            <td>${m.Status || '-'}</td>
-            <td>${m.Page || '-'}</td>
-            <td>${formatEST(m.DateCreated)}</td>
-          `;
-          tableBody.appendChild(row);
+        const body2 = document.querySelector('#markupTable tbody');
+        body2.innerHTML = '';
+        data.forEach(m => {
+          body2.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>${m.Author || '-'}</td>
+              <td>${m.Comments || '-'}</td>
+              <td>${m.Status || '-'}</td>
+              <td>${m.Page || '-'}</td>
+              <td>${formatEST(m.DateCreated)}</td>
+            </tr>
+          `);
         });
-        dataTable = new DataTable('#markupTable', {
-          order: [[4, 'desc']],
-          pageLength: 25
-        });
+        dataTable = new DataTable('#markupTable', { order: [[4, 'desc']], pageLength: 25 });
 
-        /* Pie Chart */
-        const statusCounts = {};
-        data.forEach((m) => {
-          const status = m.Status || 'Unknown';
-          statusCounts[status] = (statusCounts[status] || 0) + 1;
-        });
-
-        const statusLabels = Object.keys(statusCounts);
-        const statusValues = Object.values(statusCounts);
+        /* Status Pie Chart */
+        const statusMap = {};
+        data.forEach(m => statusMap[m.Status || 'Unknown'] = (statusMap[m.Status || 'Unknown'] || 0) + 1);
 
         if (statusChart) statusChart.destroy();
         statusChart = new Chart(ctxStatus, {
           type: 'pie',
           data: {
-            labels: statusLabels,
-            datasets: [
-              {
-                data: statusValues,
-                backgroundColor: [
-                  '#1A5AFF',
-                  '#00B8A9',
-                  '#F9ED69',
-                  '#F08A5D',
-                  '#B83B5E'
-                ]
-              }
-            ]
-          },
-          options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            labels: Object.keys(statusMap),
+            datasets: [{ data: Object.values(statusMap) }]
+          }
         });
 
-        /* Activity Chart */
-        const countsByDay = {};
-        data.forEach((m) => {
-          const day = new Date(m.DateCreated).toLocaleDateString('en-US', {
-            timeZone: 'America/New_York'
-          });
-          countsByDay[day] = (countsByDay[day] || 0) + 1;
+        /* Activity Line Chart */
+        const days = {};
+        data.forEach(m => {
+          const d = new Date(m.DateCreated).toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+          days[d] = (days[d] || 0) + 1;
         });
 
         if (activityChart) activityChart.destroy();
         activityChart = new Chart(ctxActivity, {
           type: 'line',
           data: {
-            labels: Object.keys(countsByDay),
-            datasets: [
-              {
-                label: 'Markups per Day',
-                data: Object.values(countsByDay),
-                borderColor: '#1A5AFF',
-                tension: 0.3
-              }
-            ]
+            labels: Object.keys(days),
+            datasets: [{
+              label: 'Markups per Day',
+              data: Object.values(days),
+              borderColor: '#1A5AFF'
+            }]
           }
         });
 
         lastUpdated.textContent = `Last updated: ${formatEST(new Date())}`;
       } catch (err) {
-        alert('Failed to load data.');
         console.error(err);
+        alert('Failed to load markup data.');
       }
 
       refreshBtn.disabled = false;
@@ -536,14 +467,13 @@
     refreshBtn.addEventListener('click', fetchAndRender);
     window.addEventListener('DOMContentLoaded', fetchAndRender);
 
+
     /* ---------------- SESSION FILE CLOSEOUT ---------------- */
 
-    const loadBtn = document.getElementById('loadSessionFiles');
-    const sessionTableBody = document.querySelector(
-      '#sessionFilesTable tbody'
-    );
+    const loadBtn = document.getElementById("loadSessionFiles");
+    const tbody = document.querySelector("#sessionFilesTable tbody");
 
-    const progressModal = document.getElementById('progressModal');
+    const modal = document.getElementById('progressModal');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
     const stepUpdate = document.getElementById('step-update');
     const stepRemove = document.getElementById('step-remove');
@@ -551,121 +481,116 @@
     const progressMessage = document.getElementById('progressMessage');
     const progressError = document.getElementById('progressError');
 
-    function resetProgressModal() {
-      [stepUpdate, stepRemove, stepCheckin].forEach((li) => {
+    function resetModal() {
+      [stepUpdate, stepRemove, stepCheckin].forEach(li => {
         li.classList.remove('done');
         li.classList.add('pending');
       });
       progressMessage.textContent = 'Running closeout steps…';
       progressError.style.display = 'none';
-      progressError.textContent = '';
       modalCloseBtn.style.display = 'none';
     }
 
-    function openProgressModal() {
-      resetProgressModal();
-      progressModal.classList.add('active');
+    function openModal() {
+      resetModal();
+      modal.classList.add('active');
     }
 
-    function closeProgressModal() {
-      progressModal.classList.remove('active');
+    function closeModal() {
+      modal.classList.remove('active');
     }
 
-    modalCloseBtn.addEventListener('click', closeProgressModal);
+    modalCloseBtn.addEventListener('click', closeModal);
 
-    if (loadBtn) {
-      loadBtn.addEventListener('click', async () => {
-        try {
-          loadBtn.disabled = true;
-          loadBtn.textContent = 'Loading...';
+    loadBtn.addEventListener('click', async () => {
+      try {
+        loadBtn.disabled = true;
+        loadBtn.textContent = 'Loading...';
 
-          const res = await fetch('/api/closeout/files');
-          const files = await res.json();
+        const res = await fetch('/api/closeout/files');
+        const files = await res.json();
 
-          sessionTableBody.innerHTML = '';
+        tbody.innerHTML = '';
 
-          files.forEach((f) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
+        files.forEach(f => {
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr>
               <td>${f.fileName}</td>
               <td>${f.sessionFileId}</td>
               <td>${f.projectFileId || '-'}</td>
               <td>
-                <button class="closeoutBtn btn-blue"
+                <button class="btn-blue closeoutBtn"
                         data-sessionfile="${f.sessionFileId}"
                         data-projectfile="${f.projectFileId || ''}">
                   Close Out
                 </button>
               </td>
-            `;
-            sessionTableBody.appendChild(row);
-          });
+            </tr>
+          `);
+        });
 
-          document.querySelectorAll('.closeoutBtn').forEach((btn) => {
-            btn.addEventListener('click', async () => {
-              const sessionFileId = btn.dataset.sessionfile;
-              const projectFileId = btn.dataset.projectfile;
+        document.querySelectorAll('.closeoutBtn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const sessionFileId = btn.dataset.sessionfile;
+            const projectFileId = btn.dataset.projectfile;
 
-              if (!projectFileId) {
-                alert(
-                  'No Project File ID found for this file. Verify your Session → Project mapping.'
-                );
-                return;
-              }
+            if (!projectFileId) {
+              alert('Missing ProjectFileId — cannot close out this file.');
+              return;
+            }
 
-              btn.disabled = true;
-              btn.textContent = 'Processing...';
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
 
-              openProgressModal();
+            openModal();
 
-              try {
-                const resp = await fetch('/api/closeout-file', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ sessionFileId, projectFileId })
+            try {
+              const resp = await fetch('/api/closeout-file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionFileId, projectFileId })
+              });
+
+              if (resp.ok) {
+                /* Mark all steps as done (Option B) */
+                [stepUpdate, stepRemove, stepCheckin].forEach(li => {
+                  li.classList.remove('pending');
+                  li.classList.add('done');
                 });
 
-                if (resp.ok) {
-                  // mark all steps as done (backend performed all in sequence)
-                  [stepUpdate, stepRemove, stepCheckin].forEach((li) => {
-                    li.classList.remove('pending');
-                    li.classList.add('done');
-                  });
-                  progressMessage.textContent =
-                    'File successfully closed out and checked in.';
-                  btn.textContent = '✔ Done';
-                  modalCloseBtn.style.display = 'inline-block';
-                } else {
-                  const err = await resp.json().catch(() => ({}));
-                  progressMessage.textContent = 'Closeout failed.';
-                  progressError.style.display = 'block';
-                  progressError.textContent =
-                    err.error || 'Unknown error. Check server logs.';
-                  btn.textContent = 'Error';
-                  btn.disabled = false;
-                  modalCloseBtn.style.display = 'inline-block';
-                }
-              } catch (e) {
-                console.error(e);
+                progressMessage.textContent = 'File successfully closed out.';
+                btn.textContent = '✔ Done';
+                modalCloseBtn.style.display = 'inline-block';
+              } else {
+                const err = await resp.json().catch(() => ({}));
                 progressMessage.textContent = 'Closeout failed.';
+                progressError.textContent = err.error || 'Unknown error.';
                 progressError.style.display = 'block';
-                progressError.textContent =
-                  e.message || 'Unknown error. Check server logs.';
                 btn.textContent = 'Error';
                 btn.disabled = false;
                 modalCloseBtn.style.display = 'inline-block';
               }
-            });
+            } catch (e) {
+              progressMessage.textContent = 'Closeout failed.';
+              progressError.textContent = e.message || 'Unknown error.';
+              progressError.style.display = 'block';
+
+              btn.textContent = 'Error';
+              btn.disabled = false;
+              modalCloseBtn.style.display = 'inline-block';
+            }
           });
-        } catch (err) {
-          console.error('Error loading session files:', err);
-          alert('Failed to load session files. Check console.');
-        } finally {
-          loadBtn.disabled = false;
-          loadBtn.textContent = 'Load Files';
-        }
-      });
-    }
+        });
+
+      } catch (err) {
+        console.error('Load error:', err);
+        alert('Failed to load session files.');
+      } finally {
+        loadBtn.disabled = false;
+        loadBtn.textContent = 'Load Files';
+      }
+    });
   </script>
+
 </body>
 </html>
