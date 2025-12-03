@@ -12,18 +12,17 @@ const API_V1 = 'https://api.bluebeam.com/publicapi/v1';
 const API_V2 = 'https://api.bluebeam.com/publicapi/v2';
 
 const CLIENT_ID = process.env.BB_CLIENT_ID;
-const CLIENT_SECRET = process.env.BB_CLIENT_SECRET;
 
 // -----------------------------------------------------------------------------
 // DEMO CONSTANTS
 // -----------------------------------------------------------------------------
 
-// Markup dashboard demo (v2)
+// Markup Dashboard (v2)
 const MARKUP_SESSION_ID = '515-659-145';
 const MARKUP_FILE_ID = '98061063';
 const MARKUP_FILE_NAME = 'Chicago Office Complete Document (API Demo).pdf';
 
-// Closeout demo (v1)
+// Closeout Demo (v1)
 const CLOSEOUT_PROJECT_ID = '564-177-023';
 const CLOSEOUT_SESSION_ID = '693-759-210';
 
@@ -31,7 +30,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// ESM-compatible fetch wrapper
+// ESM fetch wrapper
 const fetch = (...args) =>
   import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
@@ -45,20 +44,16 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     markupSessionId: MARKUP_SESSION_ID,
     markupFileId: MARKUP_FILE_ID,
-    closeoutSession: CLOSEOUT_SESSION_ID,
-    closeoutProject: CLOSEOUT_PROJECT_ID
+    closeoutSessionId: CLOSEOUT_SESSION_ID,
+    closeoutProjectId: CLOSEOUT_PROJECT_ID
   });
 });
 
 // -----------------------------------------------------------------------------
-// 📊 MARKUP API DEMO (v2)
+// 📊 MARKUP API ENDPOINT (v2)
 // -----------------------------------------------------------------------------
 app.get('/powerbi/markups', async (req, res) => {
   try {
-    console.log(
-      `📊 Fetching markups for session ${MARKUP_SESSION_ID}, file ${MARKUP_FILE_ID}...`
-    );
-
     const accessToken = await tokenManager.getValidAccessToken();
 
     const response = await fetch(
@@ -73,140 +68,146 @@ app.get('/powerbi/markups', async (req, res) => {
     );
 
     if (!response.ok) {
-      const err = await response.text();
-      throw new Error(
-        `Failed to get markups: ${response.status} - ${err}`
-      );
+      throw new Error(`Failed to fetch markups: ${response.status}`);
     }
 
     const raw = await response.json();
-    const markups = raw.Markups || raw || [];
+    const markups = raw.Markups || [];
 
     const flattened = markups.map((m) => ({
-      MarkupId: m.Id || null,
+      MarkupId: m.Id,
       FileName: MARKUP_FILE_NAME,
       FileId: MARKUP_FILE_ID,
       SessionId: MARKUP_SESSION_ID,
-      Type: m.Type || null,
-      Subject: m.Subject || null,
-      Comment: m.Comment || null,
-      Author: m.Author || null,
-      DateCreated: m.DateCreated || null,
-      Page: m.Page || null,
-      Status: m.Status || null
+      Type: m.Type,
+      Subject: m.Subject,
+      Comment: m.Comment,
+      Author: m.Author,
+      DateCreated: m.DateCreated,
+      Page: m.Page,
+      Status: m.Status
     }));
 
-    console.log(`✅ Returning ${flattened.length} markups`);
     res.json(flattened);
-  } catch (err) {
-    console.error('❌ Error in /powerbi/markups:', err.message);
-    res.status(500).json({ error: err.message });
+  } catch (e) {
+    console.error("❌ /powerbi/markups error:", e);
+    res.status(500).json({ error: e.message });
   }
 });
 
 // -----------------------------------------------------------------------------
-// 📁 SESSION CLOSEOUT DEMO — LIST FILES (v1)
+// ⭐ NEW FUNCTION — AUTO-DISCOVER PROJECT FILE ID
+// -----------------------------------------------------------------------------
+async function getProjectFileIdByName(accessToken, fileName) {
+  const url = `${API_V1}/projects/${CLOSEOUT_PROJECT_ID}/files`;
+
+  const resp = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      client_id: CLIENT_ID,
+      Accept: "application/json"
+    }
+  });
+
+  if (!resp.ok) {
+    throw new Error(`Failed to list project files: ${resp.status} - ${await resp.text()}`);
+  }
+
+  const raw = await resp.json();
+  const files = raw.Files || [];
+
+  const match = files.find(f => f.Name === fileName);
+
+  return match ? match.Id : null;
+}
+
+// -----------------------------------------------------------------------------
+// ⭐ NEW ENDPOINT — INITIALIZE CLOSEOUT: LIST SESSION FILE + FIND PROJECT FILE ID
 // -----------------------------------------------------------------------------
 app.get('/api/closeout/files', async (req, res) => {
   try {
-    console.log(`📂 Listing files for session ${CLOSEOUT_SESSION_ID}`);
-
     const accessToken = await tokenManager.getValidAccessToken();
 
-    const response = await fetch(
-      `${API_V1}/sessions/${CLOSEOUT_SESSION_ID}/files`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          client_id: CLIENT_ID,
-          Accept: "application/json"
-        }
-      }
-    );
+    // 1️⃣ Get Session Files
+    const sessionUrl = `${API_V1}/sessions/${CLOSEOUT_SESSION_ID}/files`;
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(
-        `Failed to fetch files for session: ${response.status} - ${err}`
-      );
+    const sessResp = await fetch(sessionUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        client_id: CLIENT_ID,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!sessResp.ok) {
+      throw new Error(`Failed to fetch session files: ${sessResp.status} - ${await sessResp.text()}`);
     }
 
-    const json = await response.json();
+    const sessionRaw = await sessResp.json();
+    const sessionFiles = sessionRaw.Files || [];
 
-    // Correct structure:
-    // { "Files": [ { Id, Name, ... } ], "TotalCount": 0 }
-    const files = json.Files || [];
+    if (sessionFiles.length === 0) {
+      return res.json([]);
+    }
 
-    const mapped = files.map(f => ({
-      fileName: f.Name || "Unknown File",
-      sessionFileId: f.Id,                      // correct field per spec
-      projectFileId: f.ProjectFileId || null    // may be null if uploaded locally
-    }));
+    // Demo assumes only ONE file in the Session
+    const sessionFile = sessionFiles[0];
 
-    console.log(`✅ Found ${mapped.length} file(s)`);
+    // 2️⃣ Auto-discover matching project file by filename
+    const projectFileId = await getProjectFileIdByName(accessToken, sessionFile.Name);
+
+    const mapped = [{
+      fileName: sessionFile.Name,
+      sessionFileId: sessionFile.Id,
+      projectFileId // may be null
+    }];
+
     res.json(mapped);
 
-  } catch (err) {
-    console.error('❌ /api/closeout/files error:', err.message);
-    res.status(500).json({ error: err.message });
+  } catch (e) {
+    console.error("❌ /api/closeout/files error:", e);
+    res.status(500).json({ error: e.message });
   }
 });
 
 // -----------------------------------------------------------------------------
-// 📁 SESSION CLOSEOUT DEMO — FULL AUTOMATION FLOW (v1)
+// 📁 CLOSEOUT FILE FLOW (Update Project Copy → Remove from Session → Final Check-in)
 // -----------------------------------------------------------------------------
 app.post('/api/closeout-file', async (req, res) => {
   try {
     const { sessionFileId, projectFileId } = req.body;
 
-    if (!sessionFileId || !projectFileId) {
-      throw new Error('Missing sessionFileId or projectFileId');
-    }
+    if (!sessionFileId) throw new Error("Missing sessionFileId.");
+    if (!projectFileId) throw new Error("Missing projectFileId — cannot close out this file.");
 
     const accessToken = await tokenManager.getValidAccessToken();
 
-    console.log(
-      `🚀 Starting closeout: sessionFile=${sessionFileId}, projectFile=${projectFileId}`
-    );
-
     // -------------------------------------------------------------------------
-    // 1️⃣ Update Project Copy (via Session Checkin)
-    // POST /publicapi/v1/sessions/{sessionId}/files/{id}/checkin
+    // 1️⃣ Update project copy: POST /sessions/{sessionId}/files/{id}/checkin
     // -------------------------------------------------------------------------
     const updateUrl = `${API_V1}/sessions/${CLOSEOUT_SESSION_ID}/files/${sessionFileId}/checkin`;
 
-    console.log(`🔧 Step 1 → Updating project copy: ${updateUrl}`);
-
     const updateResp = await fetch(updateUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         client_id: CLIENT_ID,
-        Accept: 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        checkInMessage: 'Updating project copy before file removal'
-      })
+      body: JSON.stringify({ Comment: "Syncing changes to Project copy" })
     });
 
     if (!updateResp.ok) {
-      throw new Error(
-        `Update project copy failed: ${updateResp.status} - ${await updateResp.text()}`
-      );
+      throw new Error(`Step 1 failed: ${updateResp.status} - ${await updateResp.text()}`);
     }
 
-    console.log('✅ Step 1 complete — project file copy updated');
-
     // -------------------------------------------------------------------------
-    // 2️⃣ Remove File from Session (DELETE)
+    // 2️⃣ Remove file from session
     // -------------------------------------------------------------------------
     const deleteUrl = `${API_V1}/sessions/${CLOSEOUT_SESSION_ID}/files/${sessionFileId}`;
 
-    console.log(`🗑️ Step 2 → Removing file from session: ${deleteUrl}`);
-
     const deleteResp = await fetch(deleteUrl, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         client_id: CLIENT_ID
@@ -214,67 +215,39 @@ app.post('/api/closeout-file', async (req, res) => {
     });
 
     if (!deleteResp.ok) {
-      throw new Error(
-        `Removing file from session failed: ${deleteResp.status} - ${await deleteResp.text()}`
-      );
+      throw new Error(`Step 2 failed: ${deleteResp.status} - ${await deleteResp.text()}`);
     }
 
-    console.log('✅ Step 2 complete — file removed from session');
-
     // -------------------------------------------------------------------------
-    // 3️⃣ Final Checkin into Project
-    // POST /publicapi/v1/projects/{projectId}/files/{id}/checkin
+    // 3️⃣ Final check-in to project
     // -------------------------------------------------------------------------
     const checkinUrl = `${API_V1}/projects/${CLOSEOUT_PROJECT_ID}/files/${projectFileId}/checkin`;
 
-    console.log(`📥 Step 3 → Final project check-in: ${checkinUrl}`);
-
     const checkinResp = await fetch(checkinUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         client_id: CLIENT_ID,
-        Accept: 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        checkInMessage: 'Automated final check-in after session closeout'
-      })
+      body: JSON.stringify({ Comment: "Automated closeout" })
     });
 
     if (!checkinResp.ok) {
-      throw new Error(
-        `Final project check-in failed: ${checkinResp.status} - ${await checkinResp.text()}`
-      );
+      throw new Error(`Step 3 failed: ${checkinResp.status} - ${await checkinResp.text()}`);
     }
 
-    console.log('🎉 Closeout completed successfully!');
     res.json({ success: true });
 
-  } catch (err) {
-    console.error('❌ Closeout Error:', err.message);
-    res.status(500).json({ error: err.message });
+  } catch (e) {
+    console.error("❌ Closeout error:", e);
+    res.status(500).json({ error: e.message });
   }
-});
-
-// -----------------------------------------------------------------------------
-// GLOBAL ERROR HANDLERS
-// -----------------------------------------------------------------------------
-process.on('unhandledRejection', (reason) => {
-  console.error('⚠️ Unhandled Promise Rejection:', reason);
-});
-
-process.on('SIGINT', () => {
-  console.log('\n🛑 Shutting down gracefully...');
-  tokenManager.close();
-  process.exit(0);
 });
 
 // -----------------------------------------------------------------------------
 // START SERVER
 // -----------------------------------------------------------------------------
 app.listen(PORT, () => {
-  console.log(`🚀 API Demo running at http://localhost:${PORT}`);
-  console.log(`📄 Markup API (v2): /powerbi/markups`);
-  console.log(`📁 Closeout (v1): session ${CLOSEOUT_SESSION_ID}, project ${CLOSEOUT_PROJECT_ID}`);
+  console.log(`🚀 Bluebeam API Demo running at http://localhost:${PORT}`);
 });
