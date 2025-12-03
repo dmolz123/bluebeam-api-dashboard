@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Bluebeam API Demo Dashboard</title>
-  <link rel="icon" type="image/png" href="/dashboard.png">
+  <link rel="icon" type="image/png" href="/dashboard.png" />
 
   <!-- Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"
+  />
 
   <style>
     body {
@@ -19,12 +22,12 @@
     }
 
     header {
-      background-color: #1A5AFF;
+      background-color: #1a5aff;
       color: white;
       padding: 14px 24px;
       display: flex;
       align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     h1 {
@@ -55,7 +58,7 @@
     }
 
     .tab.active {
-      background: #1A5AFF;
+      background: #1a5aff;
       color: white;
       font-weight: bold;
     }
@@ -81,7 +84,7 @@
 
     #refresh {
       padding: 10px 20px;
-      background-color: #1A5AFF;
+      background-color: #1a5aff;
       color: white;
       border: none;
       border-radius: 4px;
@@ -108,7 +111,7 @@
     summary {
       font-weight: 600;
       cursor: pointer;
-      color: #1A5AFF;
+      color: #1a5aff;
     }
 
     .chart-row {
@@ -124,7 +127,7 @@
       background: #fff;
       padding: 10px;
       border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     canvas {
@@ -145,16 +148,14 @@
       align-items: center;
     }
 
-    .closeout-input {
-      padding: 8px;
-      width: 260px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+    .closeout-input-label {
+      font-size: 14px;
+      color: #333;
     }
 
     .btn-blue {
       padding: 8px 14px;
-      background: #1A5AFF;
+      background: #1a5aff;
       color: white;
       border: none;
       border-radius: 6px;
@@ -166,10 +167,70 @@
       background: #999;
       cursor: not-allowed;
     }
+
+    /* -------------- Progress Modal Styles -------------- */
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #ffffff;
+      padding: 20px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      width: 320px;
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .progress-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 12px 0;
+    }
+
+    .progress-list li {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .progress-list li.pending::before {
+      content: "⏳ ";
+    }
+
+    .progress-list li.done::before {
+      content: "✅ ";
+    }
+
+    .progress-message {
+      font-size: 13px;
+      color: #555;
+      margin-top: 8px;
+    }
+
+    .error-text {
+      color: #b00020;
+      font-size: 13px;
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
-
   <!-- Header -->
   <header>
     <h1>Bluebeam API Demo Dashboard</h1>
@@ -177,24 +238,30 @@
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab active" data-target="#tab-markups">📝 Markup API Dashboard</button>
-    <button class="tab" data-target="#tab-closeout">📁 Session File Closeout</button>
+    <button class="tab active" data-target="#tab-markups">
+      📝 Markup API Dashboard
+    </button>
+    <button class="tab" data-target="#tab-closeout">
+      📁 Session File Closeout
+    </button>
   </div>
 
   <!-- TAB CONTENT 1: MARKUP API DASHBOARD -->
   <div id="tab-markups" class="tab-content active">
-
     <div class="controls">
       <button id="refresh">🔄 Refresh Data</button>
       <div id="lastUpdated">Last updated: —</div>
     </div>
 
     <div class="content">
-
       <!-- Collapsible Instructions -->
       <details open>
         <summary>ℹ️ How to Use This Demo</summary>
-        <p>This dashboard visualizes real-time data pulled from the <strong>Bluebeam Markup API</strong> using Session <strong>515-659-145</strong>.</p>
+        <p>
+          This dashboard visualizes real-time data pulled from the
+          <strong>Bluebeam Markup API</strong> using Session
+          <strong>515-659-145</strong>.
+        </p>
         <ul>
           <li>Click <strong>Refresh Data</strong> to pull the latest markups.</li>
           <li>View workflow stages, trends over time, and activity summaries.</li>
@@ -224,7 +291,7 @@
         </div>
       </div>
 
-      <h2 style="margin-top:40px;">📄 All Markups</h2>
+      <h2 style="margin-top: 40px">📄 All Markups</h2>
       <table id="markupTable" class="display">
         <thead>
           <tr>
@@ -243,24 +310,32 @@
           <canvas id="activityChart"></canvas>
         </div>
       </div>
-
     </div>
   </div>
 
   <!-- TAB CONTENT 2: SESSION FILE CLOSEOUT -->
   <div id="tab-closeout" class="tab-content">
-
     <div class="content">
-
       <h2>📁 Session File Closeout Demo</h2>
-      <p>Automatically merge Session files back into the Project, remove them from the Session, and check them in — all with one click.</p>
+      <p>
+        This demo uses a fixed Session (<strong>693-759-210</strong>) and
+        Project (<strong>564-177-023</strong>) to show how you can automate:
+        updating the project copy, removing a file from the session, and
+        checking it back in with a single click.
+      </p>
 
       <div class="closeout-input-row">
-        <input id="sessionInput" class="closeout-input" placeholder="Enter Session ID">
+        <span class="closeout-input-label">
+          Using Session ID: <strong>693-759-210</strong>
+        </span>
         <button id="loadSessionFiles" class="btn-blue">Load Files</button>
       </div>
 
-      <table id="sessionFilesTable" class="display" style="margin-top:20px; width:100%;">
+      <table
+        id="sessionFilesTable"
+        class="display"
+        style="margin-top: 20px; width: 100%"
+      >
         <thead>
           <tr>
             <th>File Name</th>
@@ -271,25 +346,47 @@
         </thead>
         <tbody></tbody>
       </table>
+    </div>
+  </div>
 
+  <!-- Progress Modal -->
+  <div id="progressModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Closing Out File</h3>
+      <ul class="progress-list">
+        <li id="step-update" class="pending">1. Update project copy</li>
+        <li id="step-remove" class="pending">2. Remove file from session</li>
+        <li id="step-checkin" class="pending">3. Check file back into project</li>
+      </ul>
+      <div id="progressMessage" class="progress-message">
+        Running closeout steps…
+      </div>
+      <div id="progressError" class="error-text" style="display: none"></div>
+      <button
+        id="modalCloseBtn"
+        class="btn-blue"
+        style="display: none; margin-top: 12px"
+      >
+        Close
+      </button>
     </div>
   </div>
 
   <!-- SCRIPTS -->
   <script>
     /* ---------------- TAB SWITCHING ---------------- */
-    document.addEventListener("DOMContentLoaded", () => {
-      const tabs = document.querySelectorAll(".tab");
-      const contents = document.querySelectorAll(".tab-content");
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabs = document.querySelectorAll('.tab');
+      const contents = document.querySelectorAll('.tab-content');
 
-      tabs.forEach(tab => {
-        tab.addEventListener("click", () => {
-          tabs.forEach(t => t.classList.remove("active"));
-          contents.forEach(c => c.classList.remove("active"));
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          tabs.forEach((t) => t.classList.remove('active'));
+          contents.forEach((c) => c.classList.remove('active'));
 
-          tab.classList.add("active");
+          tab.classList.add('active');
           const target = document.querySelector(tab.dataset.target);
-          target.classList.add("active");
+          target.classList.add('active');
         });
       });
     });
@@ -300,12 +397,16 @@
     const refreshBtn = document.getElementById('refresh');
     const lastUpdated = document.getElementById('lastUpdated');
     const ctxStatus = document.getElementById('statusChart').getContext('2d');
-    const ctxActivity = document.getElementById('activityChart').getContext('2d');
+    const ctxActivity = document
+      .getElementById('activityChart')
+      .getContext('2d');
 
     let statusChart, activityChart, dataTable, recentTable;
 
     function formatEST(dateString) {
-      return new Date(dateString).toLocaleString('en-US', { timeZone: 'America/New_York' });
+      return new Date(dateString).toLocaleString('en-US', {
+        timeZone: 'America/New_York'
+      });
     }
 
     async function fetchAndRender() {
@@ -323,13 +424,15 @@
         }
 
         const now = new Date();
-        const past24h = data.filter(m => (now - new Date(m.DateCreated)) < 24 * 60 * 60 * 1000);
+        const past24h = data.filter(
+          (m) => now - new Date(m.DateCreated) < 24 * 60 * 60 * 1000
+        );
 
         /* Recent Table */
         if (recentTable) recentTable.clear().destroy();
         const recentBody = document.querySelector('#recentTable tbody');
         recentBody.innerHTML = '';
-        past24h.forEach(m => {
+        past24h.forEach((m) => {
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${m.Author || '-'}</td>
@@ -339,13 +442,16 @@
           `;
           recentBody.appendChild(row);
         });
-        recentTable = new DataTable('#recentTable', { order: [[3, 'desc']], pageLength: 5 });
+        recentTable = new DataTable('#recentTable', {
+          order: [[3, 'desc']],
+          pageLength: 5
+        });
 
         /* All Markups Table */
         if (dataTable) dataTable.clear().destroy();
         const tableBody = document.querySelector('#markupTable tbody');
         tableBody.innerHTML = '';
-        data.forEach(m => {
+        data.forEach((m) => {
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${m.Author || '-'}</td>
@@ -356,11 +462,14 @@
           `;
           tableBody.appendChild(row);
         });
-        dataTable = new DataTable('#markupTable', { order: [[4, 'desc']], pageLength: 25 });
+        dataTable = new DataTable('#markupTable', {
+          order: [[4, 'desc']],
+          pageLength: 25
+        });
 
         /* Pie Chart */
         const statusCounts = {};
-        data.forEach(m => {
+        data.forEach((m) => {
           const status = m.Status || 'Unknown';
           statusCounts[status] = (statusCounts[status] || 0) + 1;
         });
@@ -373,15 +482,28 @@
           type: 'pie',
           data: {
             labels: statusLabels,
-            datasets: [{ data: statusValues, backgroundColor: ['#1A5AFF', '#00B8A9', '#F9ED69', '#F08A5D', '#B83B5E'] }]
+            datasets: [
+              {
+                data: statusValues,
+                backgroundColor: [
+                  '#1A5AFF',
+                  '#00B8A9',
+                  '#F9ED69',
+                  '#F08A5D',
+                  '#B83B5E'
+                ]
+              }
+            ]
           },
           options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
         });
 
         /* Activity Chart */
         const countsByDay = {};
-        data.forEach(m => {
-          const day = new Date(m.DateCreated).toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+        data.forEach((m) => {
+          const day = new Date(m.DateCreated).toLocaleDateString('en-US', {
+            timeZone: 'America/New_York'
+          });
           countsByDay[day] = (countsByDay[day] || 0) + 1;
         });
 
@@ -390,17 +512,18 @@
           type: 'line',
           data: {
             labels: Object.keys(countsByDay),
-            datasets: [{
-              label: 'Markups per Day',
-              data: Object.values(countsByDay),
-              borderColor: '#1A5AFF',
-              tension: 0.3
-            }]
+            datasets: [
+              {
+                label: 'Markups per Day',
+                data: Object.values(countsByDay),
+                borderColor: '#1A5AFF',
+                tension: 0.3
+              }
+            ]
           }
         });
 
         lastUpdated.textContent = `Last updated: ${formatEST(new Date())}`;
-
       } catch (err) {
         alert('Failed to load data.');
         console.error(err);
@@ -415,67 +538,134 @@
 
     /* ---------------- SESSION FILE CLOSEOUT ---------------- */
 
-    const loadBtn = document.getElementById("loadSessionFiles");
-    const sessionInput = document.getElementById("sessionInput");
+    const loadBtn = document.getElementById('loadSessionFiles');
+    const sessionTableBody = document.querySelector(
+      '#sessionFilesTable tbody'
+    );
+
+    const progressModal = document.getElementById('progressModal');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const stepUpdate = document.getElementById('step-update');
+    const stepRemove = document.getElementById('step-remove');
+    const stepCheckin = document.getElementById('step-checkin');
+    const progressMessage = document.getElementById('progressMessage');
+    const progressError = document.getElementById('progressError');
+
+    function resetProgressModal() {
+      [stepUpdate, stepRemove, stepCheckin].forEach((li) => {
+        li.classList.remove('done');
+        li.classList.add('pending');
+      });
+      progressMessage.textContent = 'Running closeout steps…';
+      progressError.style.display = 'none';
+      progressError.textContent = '';
+      modalCloseBtn.style.display = 'none';
+    }
+
+    function openProgressModal() {
+      resetProgressModal();
+      progressModal.classList.add('active');
+    }
+
+    function closeProgressModal() {
+      progressModal.classList.remove('active');
+    }
+
+    modalCloseBtn.addEventListener('click', closeProgressModal);
 
     if (loadBtn) {
-      loadBtn.addEventListener("click", async () => {
-        const sessionId = sessionInput.value.trim();
-        if (!sessionId) return alert("Enter a valid Session ID");
+      loadBtn.addEventListener('click', async () => {
+        try {
+          loadBtn.disabled = true;
+          loadBtn.textContent = 'Loading...';
 
-        const res = await fetch(`/api/session/${sessionId}/files`);
-        const files = await res.json();
+          const res = await fetch('/api/closeout/files');
+          const files = await res.json();
 
-        const tbody = document.querySelector("#sessionFilesTable tbody");
-        tbody.innerHTML = "";
+          sessionTableBody.innerHTML = '';
 
-        files.forEach(f => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${f.fileName}</td>
-            <td>${f.sessionFileId}</td>
-            <td>${f.projectFileId}</td>
-            <td>
-              <button class="closeoutBtn btn-blue" 
-                      data-session="${sessionId}"
-                      data-sessionfile="${f.sessionFileId}"
-                      data-project="${f.projectId}"
-                      data-projectfile="${f.projectFileId}">
-                Close Out
-              </button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-
-        document.querySelectorAll(".closeoutBtn").forEach(btn => {
-          btn.addEventListener("click", async () => {
-            const sessionId = btn.dataset.session;
-            const sessionFileId = btn.dataset.sessionfile;
-            const projectId = btn.dataset.project;
-            const projectFileId = btn.dataset.projectfile;
-
-            btn.disabled = true;
-            btn.textContent = "Processing...";
-
-            const resp = await fetch(`/api/closeout-file`, {
-              method: "POST",
-              headers: {"Content-Type":"application/json"},
-              body: JSON.stringify({ sessionId, sessionFileId, projectId, projectFileId })
-            });
-
-            if (resp.ok) {
-              btn.textContent = "✔ Done";
-            } else {
-              btn.textContent = "Error";
-              alert("Closeout failed. Check server logs.");
-            }
+          files.forEach((f) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${f.fileName}</td>
+              <td>${f.sessionFileId}</td>
+              <td>${f.projectFileId || '-'}</td>
+              <td>
+                <button class="closeoutBtn btn-blue"
+                        data-sessionfile="${f.sessionFileId}"
+                        data-projectfile="${f.projectFileId || ''}">
+                  Close Out
+                </button>
+              </td>
+            `;
+            sessionTableBody.appendChild(row);
           });
-        });
 
+          document.querySelectorAll('.closeoutBtn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              const sessionFileId = btn.dataset.sessionfile;
+              const projectFileId = btn.dataset.projectfile;
+
+              if (!projectFileId) {
+                alert(
+                  'No Project File ID found for this file. Verify your Session → Project mapping.'
+                );
+                return;
+              }
+
+              btn.disabled = true;
+              btn.textContent = 'Processing...';
+
+              openProgressModal();
+
+              try {
+                const resp = await fetch('/api/closeout-file', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sessionFileId, projectFileId })
+                });
+
+                if (resp.ok) {
+                  // mark all steps as done (backend performed all in sequence)
+                  [stepUpdate, stepRemove, stepCheckin].forEach((li) => {
+                    li.classList.remove('pending');
+                    li.classList.add('done');
+                  });
+                  progressMessage.textContent =
+                    'File successfully closed out and checked in.';
+                  btn.textContent = '✔ Done';
+                  modalCloseBtn.style.display = 'inline-block';
+                } else {
+                  const err = await resp.json().catch(() => ({}));
+                  progressMessage.textContent = 'Closeout failed.';
+                  progressError.style.display = 'block';
+                  progressError.textContent =
+                    err.error || 'Unknown error. Check server logs.';
+                  btn.textContent = 'Error';
+                  btn.disabled = false;
+                  modalCloseBtn.style.display = 'inline-block';
+                }
+              } catch (e) {
+                console.error(e);
+                progressMessage.textContent = 'Closeout failed.';
+                progressError.style.display = 'block';
+                progressError.textContent =
+                  e.message || 'Unknown error. Check server logs.';
+                btn.textContent = 'Error';
+                btn.disabled = false;
+                modalCloseBtn.style.display = 'inline-block';
+              }
+            });
+          });
+        } catch (err) {
+          console.error('Error loading session files:', err);
+          alert('Failed to load session files. Check console.');
+        } finally {
+          loadBtn.disabled = false;
+          loadBtn.textContent = 'Load Files';
+        }
       });
     }
   </script>
-
 </body>
 </html>
