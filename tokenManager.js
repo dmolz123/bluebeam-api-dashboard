@@ -97,7 +97,7 @@ class TokenManager {
   // Refresh OAuth tokens using refresh_token
   // ---------------------------------------------------------
   async refreshAccessToken(refreshToken) {
-    const tokenUrl = "https://api.bluebeam.com/publicapi/v2/oauth/token";
+    const tokenUrl = 'https://api.bluebeam.com/oauth2/token';
 
     const payload = {
       grant_type: 'refresh_token',
