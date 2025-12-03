@@ -109,9 +109,7 @@ app.get('/powerbi/markups', async (req, res) => {
 // -----------------------------------------------------------------------------
 app.get('/api/closeout/files', async (req, res) => {
   try {
-    console.log(
-      `📂 Listing files for session ${CLOSEOUT_SESSION_ID} (project ${CLOSEOUT_PROJECT_ID})...`
-    );
+    console.log(`📂 Listing files for session ${CLOSEOUT_SESSION_ID}`);
 
     const accessToken = await tokenManager.getValidAccessToken();
 
@@ -121,7 +119,7 @@ app.get('/api/closeout/files', async (req, res) => {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           client_id: CLIENT_ID,
-          Accept: 'application/json'
+          Accept: "application/json"
         }
       }
     );
@@ -133,16 +131,21 @@ app.get('/api/closeout/files', async (req, res) => {
       );
     }
 
-    const files = await response.json();
+    const json = await response.json();
 
-    const mapped = files.map((f) => ({
-      fileName: f.FileName || 'Unknown File',
-      sessionFileId: f.FileId,
-      projectFileId: f.ProjectFileId // MUST EXIST for closeout
+    // Correct structure:
+    // { "Files": [ { Id, Name, ... } ], "TotalCount": 0 }
+    const files = json.Files || [];
+
+    const mapped = files.map(f => ({
+      fileName: f.Name || "Unknown File",
+      sessionFileId: f.Id,                      // correct field per spec
+      projectFileId: f.ProjectFileId || null    // may be null if uploaded locally
     }));
 
     console.log(`✅ Found ${mapped.length} file(s)`);
     res.json(mapped);
+
   } catch (err) {
     console.error('❌ /api/closeout/files error:', err.message);
     res.status(500).json({ error: err.message });
@@ -196,8 +199,7 @@ app.post('/api/closeout-file', async (req, res) => {
     console.log('✅ Step 1 complete — project file copy updated');
 
     // -------------------------------------------------------------------------
-    // 2️⃣ Remove File from Session
-    // DELETE /publicapi/v1/sessions/{sessionId}/files/{id}
+    // 2️⃣ Remove File from Session (DELETE)
     // -------------------------------------------------------------------------
     const deleteUrl = `${API_V1}/sessions/${CLOSEOUT_SESSION_ID}/files/${sessionFileId}`;
 
@@ -248,6 +250,7 @@ app.post('/api/closeout-file', async (req, res) => {
 
     console.log('🎉 Closeout completed successfully!');
     res.json({ success: true });
+
   } catch (err) {
     console.error('❌ Closeout Error:', err.message);
     res.status(500).json({ error: err.message });
@@ -273,7 +276,5 @@ process.on('SIGINT', () => {
 app.listen(PORT, () => {
   console.log(`🚀 API Demo running at http://localhost:${PORT}`);
   console.log(`📄 Markup API (v2): /powerbi/markups`);
-  console.log(
-    `📁 Closeout (v1): session ${CLOSEOUT_SESSION_ID}, project ${CLOSEOUT_PROJECT_ID}`
-  );
+  console.log(`📁 Closeout (v1): session ${CLOSEOUT_SESSION_ID}, project ${CLOSEOUT_PROJECT_ID}`);
 });
