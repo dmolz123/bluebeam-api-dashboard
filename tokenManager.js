@@ -3,7 +3,7 @@ const sqlite3 = require('sqlite3').verbose();
 const qs = require('querystring');
 
 class TokenManager {
-  constructor(dbPath = process.env.TOKEN_DB_PATH || '/project/src/data/tokens.db') {
+  constructor(dbPath = process.env.TOKEN_DB_PATH || (process.env.NODE_ENV === 'production' ? '/tmp/tokens.db' : './tokens.db')) {
     this.dbPath = dbPath;
     this.clientId = process.env.BB_CLIENT_ID;
     this.clientSecret = process.env.BB_CLIENT_SECRET;
